@@ -20,11 +20,11 @@ pub const TAG_LONG_STR: u8 = 0x14;
 
 #[derive(Debug)]
 pub enum ConstantType {
-    LuaNil,
-    LuaBoolean(bool),
-    LuaInteger(i64),
-    LuaNumber(f64),
-    LuaString(String),
+    Nil,
+    Boolean(bool),
+    Integer(i64),
+    Number(f64),
+    String(String),
 }
 
 

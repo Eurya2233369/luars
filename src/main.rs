@@ -1,5 +1,7 @@
 mod binary;
 mod vm;
+mod api;
+mod state;
 
 use std::{
     fs::File,
@@ -10,7 +12,7 @@ use std::{
 use binary::{chunk::Prototype, un_dump};
 
 fn main() {
-    let path = "/data/data/com.termux/files/home/project/Luars/test/luac.out";
+    let path = "/home/eurya/project/luars/test/luac.out";
 
     match read_file(path) {
         Ok(mut content) => {

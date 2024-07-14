@@ -54,13 +54,13 @@ pub const OP_VARARG: u8 = 0x2d;
 pub const OP_EXTRAARG: u8 = 0x2e;
 
 /* 操作数 */
-pub const OP_ARG_N: u8 = 0; // OpArgN
-pub const OP_ARG_U: u8 = 1; // OpArgU
-pub const OP_ARG_R: u8 = 2; // OpArgR
-pub const OP_ARG_K: u8 = 3; // OpArgK
+pub const OP_ARG_N: u8 = 0;
+pub const OP_ARG_U: u8 = 1;
+pub const OP_ARG_R: u8 = 2;
+pub const OP_ARG_K: u8 = 3;
 
 /* 指令表 */
-pub const OPCODES: &'static [OpCode] = &[
+const OPCODES: &'static [OpCode] = &[
     opcode(OP_ARG_R, OP_ARG_N, OP_MODE_ABC, "MOVE     "), // R(A) := R(B)
     opcode(OP_ARG_K, OP_ARG_N, OP_MODE_ABX, "LOADK    "), // R(A) := Kst(Bx)
     opcode(OP_ARG_N, OP_ARG_N, OP_MODE_ABX, "LOADKX   "), // R(A) := Kst(extra arg)
@@ -119,9 +119,14 @@ const fn opcode(bmode: u8, cmode: u8, opmode: u8, name: &'static str) -> OpCode 
     }
 }
 
+pub fn code_map(code: u8) -> &'static OpCode {
+    &OPCODES[code as usize]
+}
+
 pub struct OpCode {
     pub bmode: u8,          // B arg mode
     pub cmode: u8,          // C arg mode
     pub opmode: u8,         // op mode
     pub name: &'static str, // code name
 }
+

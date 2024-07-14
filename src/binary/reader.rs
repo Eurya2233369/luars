@@ -131,12 +131,12 @@ impl<'a> Reader<'a> {
     fn read_constant(&mut self) -> chunk::ConstantType {
         let b = self.read_byte();
         match b {
-            chunk::TAG_NIL => chunk::ConstantType::LuaNil,
-            chunk::TAG_BOOLEAN => chunk::ConstantType::LuaBoolean(self.read_byte() != 0),
-            chunk::TAG_INTEGER => chunk::ConstantType::LuaInteger(self.read_lua_integer()),
-            chunk::TAG_NUMBER => chunk::ConstantType::LuaNumber(self.read_lua_number()),
+            chunk::TAG_NIL => chunk::ConstantType::Nil,
+            chunk::TAG_BOOLEAN => chunk::ConstantType::Boolean(self.read_byte() != 0),
+            chunk::TAG_INTEGER => chunk::ConstantType::Integer(self.read_lua_integer()),
+            chunk::TAG_NUMBER => chunk::ConstantType::Number(self.read_lua_number()),
             chunk::TAG_SHORT_STR | chunk::TAG_LONG_STR => {
-                chunk::ConstantType::LuaString(self.read_string())
+                chunk::ConstantType::String(self.read_string())
             }
             _ => panic!("corrupted!"),
         }
