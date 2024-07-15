@@ -2,16 +2,18 @@ mod binary;
 mod vm;
 mod api;
 mod state;
+mod number;
 
 use std::{
-    fs::File,
-    io::{BufReader, Read},
-    path::Path,
+    fs::File, io::{BufReader, Read}, path::Path
 };
 
+use api::{basic::{Arithmetic, BasicType, Comparison}, LuaAPI};
 use binary::{chunk::Prototype, un_dump};
+use state::LuaState;
 
 fn main() {
+    /*
     let path = "/home/eurya/project/luars/test/luac.out";
 
     match read_file(path) {
@@ -22,7 +24,17 @@ fn main() {
         Err(e) => {
             eprintln!("Error reading file: {}", e);
         }
-    }
+    }*/
+
+    let mut test = state::new_lua_state();
+    test.push_integer(1);
+    test.push_number(2.0);
+    test.push_string("3.0".to_string());
+    test.push_string("4.0".to_string());
+    print_stack(&test);
+
+    test.arith(Arithmetic::LUA_OPADD);
+    print_stack(&test);
 }
 
 fn read_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, std::io::Error> {
@@ -66,4 +78,18 @@ fn print_header(f: &Prototype) {
         f.constants().len(),
         f.protos().len()
     );
+}
+
+fn print_stack(ls: &LuaState) {
+    let top = ls.top();
+    println!("stack top {top}");
+    for i in 1..=top {
+        let t = ls.type_enum_id(i);
+        match t {
+            BasicType::LUA_TBOOLEAN => println!("[{:?}, {}]", t, ls.to_boolean(i)),
+            BasicType::LUA_TNUMBER => println!("[{:?}, {}]", t, ls.to_number(i)),
+            BasicType::LUA_TSTRING => println!("[{:?}, {}]", t, ls.to_string(i)),
+            _ => println!("[{}]", ls.type_name_str(t)),
+        }
+    }
 }

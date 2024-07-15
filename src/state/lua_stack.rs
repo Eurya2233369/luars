@@ -30,9 +30,10 @@ impl LuaStack {
 
     pub fn abs_index(&self, idx: isize) -> isize {
         if idx >= 0 {
-            return idx;
+            idx
+        } else {
+            idx + self.top() + 1
         }
-        idx + self.top() + 1
     }
 
     pub fn is_valid(&self, idx: isize) -> bool {
@@ -42,11 +43,13 @@ impl LuaStack {
 
     pub fn get(&self, idx: isize) -> LuaValue {
         let abs_idx = self.abs_index(idx);
+
         if abs_idx > 0 && abs_idx <= self.top() {
             let idx = abs_idx as usize - 1;
-            return self.slot[idx].clone();
+            self.slot[idx].clone()
+        } else {
+            LuaValue::Nil
         }
-        LuaValue::Nil
     }
 
     pub fn set(&mut self, idx: isize, val: LuaValue) {

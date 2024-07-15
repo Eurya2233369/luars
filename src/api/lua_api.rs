@@ -1,4 +1,4 @@
-use super::basic::BasicType;
+use super::basic::{Arithmetic, BasicType, Comparison};
 
 pub trait LuaState {
     fn top(&self) -> isize;
@@ -13,8 +13,8 @@ pub trait LuaState {
     fn rotate(&mut self, idx: isize, n: isize);
     fn set_top(&mut self, idx: isize);
     /* access functions (stack -> rust) */
-    fn type_name(&self, tp: BasicType) -> &str;
-    fn type_id(&self, idx: isize) -> BasicType;
+    fn type_name_str(&self, tp: BasicType) -> &str;
+    fn type_enum_id(&self, idx: isize) -> BasicType;
     fn is_none(&self, idx: isize) -> bool;
     fn is_nil(&self, idx: isize) -> bool;
     fn is_none_or_nil(&self, idx: isize) -> bool;
@@ -38,4 +38,10 @@ pub trait LuaState {
     fn push_integer(&mut self, n: i64);
     fn push_number(&mut self, n: f64);
     fn push_string(&mut self, s: String);
+    /* comparison and arithmetic functions */
+    fn arith(&mut self, op: Arithmetic);
+    fn compare(&self, idx1: isize, idx2: isize, op: Comparison) -> bool;
+    /* miscellaneous functions */
+    fn len(&mut self, idx: isize);
+    fn concat(&mut self, n: isize);
 }

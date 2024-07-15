@@ -1,6 +1,9 @@
-use crate::api::{basic::BasicType, lua_api};
+use crate::api::{
+    basic::{Arithmetic, BasicType, Comparison},
+    LuaAPI
+};
 
-use super::{lua_stack::LuaStack, lua_value::LuaValue};
+use super::{api_compare, lua_stack::LuaStack, lua_value::LuaValue};
 
 pub struct LuaState {
     stack: LuaStack,
@@ -14,7 +17,7 @@ impl LuaState {
     }
 }
 
-impl lua_api::LuaState for LuaState {
+impl LuaAPI for LuaState {
     fn top(&self) -> isize {
         self.stack.top()
     }
@@ -87,7 +90,7 @@ impl lua_api::LuaState for LuaState {
     }
 
     /* access functions (stack -> rust) */
-    fn type_name(&self, tp: BasicType) -> &str {
+    fn type_name_str(&self, tp: BasicType) -> &str {
         match tp {
             BasicType::LUA_TNONE => "no value",
             BasicType::LUA_TNIL => "nil",
@@ -101,7 +104,7 @@ impl lua_api::LuaState for LuaState {
         }
     }
 
-    fn type_id(&self, idx: isize) -> BasicType {
+    fn type_enum_id(&self, idx: isize) -> BasicType {
         if self.stack.is_valid(idx) {
             self.stack.get(idx).type_id()
         } else {
@@ -110,35 +113,35 @@ impl lua_api::LuaState for LuaState {
     }
 
     fn is_none(&self, idx: isize) -> bool {
-        self.type_id(idx) == BasicType::LUA_TNONE
+        self.type_enum_id(idx) == BasicType::LUA_TNONE
     }
 
     fn is_nil(&self, idx: isize) -> bool {
-        self.type_id(idx) == BasicType::LUA_TNIL
+        self.type_enum_id(idx) == BasicType::LUA_TNIL
     }
 
     fn is_none_or_nil(&self, idx: isize) -> bool {
-        self.type_id(idx).index() <= BasicType::LUA_TNIL.index()
+        self.type_enum_id(idx).index() <= BasicType::LUA_TNIL.index()
     }
 
     fn is_boolean(&self, idx: isize) -> bool {
-        self.type_id(idx) == BasicType::LUA_TBOOLEAN
+        self.type_enum_id(idx) == BasicType::LUA_TBOOLEAN
     }
 
     fn is_table(&self, idx: isize) -> bool {
-        self.type_id(idx) == BasicType::LUA_TTABLE
+        self.type_enum_id(idx) == BasicType::LUA_TTABLE
     }
 
     fn is_function(&self, idx: isize) -> bool {
-        self.type_id(idx) == BasicType::LUA_TFUNCTION
+        self.type_enum_id(idx) == BasicType::LUA_TFUNCTION
     }
 
     fn is_thread(&self, idx: isize) -> bool {
-        self.type_id(idx) == BasicType::LUA_TTHREAD
+        self.type_enum_id(idx) == BasicType::LUA_TTHREAD
     }
 
     fn is_string(&self, idx: isize) -> bool {
-        let t = self.type_id(idx);
+        let t = self.type_enum_id(idx);
         t == BasicType::LUA_TSTRING || t == BasicType::LUA_TNUMBER
     }
 
@@ -159,10 +162,8 @@ impl lua_api::LuaState for LuaState {
     }
 
     fn to_integerx(&self, idx: isize) -> Option<i64> {
-        match self.stack.get(idx) {
-            LuaValue::Integer(i) => Some(i),
-            _ => None,
-        }
+        let val = self.stack.get(idx);
+        val.to_integer()
     }
 
     fn to_number(&self, idx: isize) -> f64 {
@@ -170,11 +171,8 @@ impl lua_api::LuaState for LuaState {
     }
 
     fn to_numberx(&self, idx: isize) -> Option<f64> {
-        match self.stack.get(idx) {
-            LuaValue::Number(n) => Some(n),
-            LuaValue::Integer(i) => Some(i as f64),
-            _ => None,
-        }
+        let val = self.stack.get(idx);
+        val.to_float()
     }
 
     fn to_string(&self, idx: isize) -> String {
@@ -209,5 +207,64 @@ impl lua_api::LuaState for LuaState {
 
     fn push_string(&mut self, s: String) {
         self.stack.push(LuaValue::String(s));
+    }
+
+    fn arith(&mut self, op: Arithmetic) {
+        if op != Arithmetic::LUA_OPUNM && op != Arithmetic::LUA_OPBNOT {
+            let b = self.stack.pop();
+            let a = self.stack.pop();
+            if let Some(result) = super::api_arith::arith(&a, &b, &op) {
+                self.stack.push(result);
+                return;
+            }
+        } else {
+            let a = self.stack.pop();
+            if let Some(result) = super::api_arith::arith(&a, &a, &op) {
+                self.stack.push(result);
+                return;
+            }
+        }
+        panic!("arithmetic error!");
+    }
+
+    fn compare(&self, idx1: isize, idx2: isize, op: Comparison) -> bool {
+        if !self.stack.is_valid(idx1) || !self.stack.is_valid(idx2) {
+            false
+        } else {
+            let a = self.stack.get(idx1);
+            let b = self.stack.get(idx2);
+            if let Some(result) = api_compare::compare(&a, &b, op) {
+                return result;
+            }
+            panic!("comparison error!")
+        }
+    }
+
+    fn len(&mut self, idx: isize) {
+        let val = self.stack.get(idx);
+        if let LuaValue::String(s) = val {
+            self.stack.push(LuaValue::Integer(s.len() as i64));
+        } else {
+            panic!("length error!")
+        }
+    }
+
+    fn concat(&mut self, n: isize) {
+        if n == 0 {
+            self.stack.push(LuaValue::String(String::new()));
+        } else if n >= 2 {
+            for _ in 1..n {
+                if self.is_string(-1) && self.is_string(-2) {
+                    let s2 = self.to_string(-1);
+                    let mut s1 = self.to_string(-2);
+                    s1.push_str(&s2);
+                    self.stack.pop();
+                    self.stack.pop();
+                    self.stack.push(LuaValue::String(s1));
+                } else {
+                    panic!("concatenation error!");
+                }
+            }
+        }
     }
 }

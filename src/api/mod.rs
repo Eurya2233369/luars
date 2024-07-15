@@ -1,2 +1,4 @@
 pub mod basic;
-pub mod lua_api;
+mod lua_api;
+
+pub use self::lua_api::LuaState as LuaAPI;
