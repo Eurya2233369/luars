@@ -8,7 +8,7 @@ use std::{
     fs::File, io::{BufReader, Read}, path::Path
 };
 
-use api::{basic::{Arithmetic, BasicType, Comparison}, LuaAPI};
+use api::{basic::{Arithmetic, BasicType, Comparison}, lua_vm::LuaAPI };
 use binary::{chunk::Prototype, un_dump};
 use state::LuaState;
 
@@ -26,7 +26,7 @@ fn main() {
         }
     }*/
 
-    let mut test = state::new_lua_state();
+    /*let mut test = state::new_lua_state();
     test.push_integer(1);
     test.push_number(2.0);
     test.push_string("3.0".to_string());
@@ -34,7 +34,7 @@ fn main() {
     print_stack(&test);
 
     test.arith(Arithmetic::LUA_OPADD);
-    print_stack(&test);
+    print_stack(&test);*/
 }
 
 fn read_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, std::io::Error> {

@@ -45,7 +45,7 @@ basic! {
 
 basic! {
     #[derive(Debug, Clone, PartialEq)]
-    pub enum Arithmetic {
+     pub enum Arithmetic {
         LUA_OPADD,  // +
         LUA_OPSUB,  // -
         LUA_OPMUL,  // *

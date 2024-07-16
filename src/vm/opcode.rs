@@ -1,3 +1,9 @@
+use std::marker::PhantomData;
+
+use crate::api::lua_vm::LuaVM;
+
+use super::{inst_load::load_k, inst_misc::misc_move};
+
 /* 编码模式 */
 pub const OP_MODE_ABC: u8 = 0; // iABC
 pub const OP_MODE_ABX: u8 = 1; // iABx
@@ -102,12 +108,12 @@ const OPCODES: &'static [OpCode] = &[
     opcode(OP_ARG_U, OP_ARG_N, OP_MODE_ABC, "RETURN   "), // return R(A), ... ,R(A+B-2)
     opcode(OP_ARG_R, OP_ARG_N, OP_MODE_ASBX, "FORLOOP "), // R(A)+=R(A+2); if R(A) <?= R(A+1) then { pc+=sBx; R(A+3)=R(A) }
     opcode(OP_ARG_R, OP_ARG_N, OP_MODE_ASBX, "FORPREP "), // R(A)-=R(A+2); pc+=sBx
-    opcode(OP_ARG_N, OP_ARG_U, OP_MODE_ABC, "TFORCALL "),  // R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));
+    opcode(OP_ARG_N, OP_ARG_U, OP_MODE_ABC, "TFORCALL "), // R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));
     opcode(OP_ARG_R, OP_ARG_N, OP_MODE_ASBX, "TFORLOOP"), // if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }
-    opcode(OP_ARG_U, OP_ARG_U, OP_MODE_ABC, "SETLIST  "),  // R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B
-    opcode(OP_ARG_U, OP_ARG_N, OP_MODE_ABX, "CLOSURE  "),  // R(A) := closure(KPROTO[Bx])
-    opcode(OP_ARG_U, OP_ARG_N, OP_MODE_ABC, "VARARG   "),  // R(A), R(A+1), ..., R(A+B-2) = vararg
-    opcode(OP_ARG_U, OP_ARG_U, OP_MODE_AX, "EXTRAARG  "),   // extra (larger) argument for previous opcode
+    opcode(OP_ARG_U, OP_ARG_U, OP_MODE_ABC, "SETLIST  "), // R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B
+    opcode(OP_ARG_U, OP_ARG_N, OP_MODE_ABX, "CLOSURE  "), // R(A) := closure(KPROTO[Bx])
+    opcode(OP_ARG_U, OP_ARG_N, OP_MODE_ABC, "VARARG   "), // R(A), R(A+1), ..., R(A+B-2) = vararg
+    opcode(OP_ARG_U, OP_ARG_U, OP_MODE_AX, "EXTRAARG  "), // extra (larger) argument for previous opcode
 ];
 
 const fn opcode(bmode: u8, cmode: u8, opmode: u8, name: &'static str) -> OpCode {
@@ -129,4 +135,3 @@ pub struct OpCode {
     pub opmode: u8,         // op mode
     pub name: &'static str, // code name
 }
-

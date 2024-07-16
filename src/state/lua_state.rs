@@ -1,18 +1,27 @@
-use crate::api::{
-    basic::{Arithmetic, BasicType, Comparison},
-    LuaAPI
+use std::usize;
+
+use crate::{
+    api::{
+        basic::{Arithmetic, BasicType, Comparison},
+        lua_vm::{LuaAPI, LuaVM},
+    },
+    binary::chunk::{ConstantType, Prototype},
 };
 
 use super::{api_compare, lua_stack::LuaStack, lua_value::LuaValue};
 
 pub struct LuaState {
     stack: LuaStack,
+    proto: Prototype,
+    pc: isize,
 }
 
 impl LuaState {
-    pub fn new() -> Self {
+    pub fn new(stack_size: usize, proto: Prototype) -> Self {
         Self {
-            stack: LuaStack::new(20),
+            stack: LuaStack::new(stack_size),
+            proto: proto,
+            pc: 0,
         }
     }
 }
@@ -265,6 +274,44 @@ impl LuaAPI for LuaState {
                     panic!("concatenation error!");
                 }
             }
+        }
+    }
+}
+
+impl LuaVM for LuaState {
+    fn pc(&self) -> isize {
+        self.pc
+    }
+
+    fn add_pc(&mut self, n: isize) {
+        self.pc += n
+    }
+
+    fn fetch(&mut self) -> u32 {
+        let i = self.proto.code()[self.pc as usize];
+        self.pc += 1;
+        i
+    }
+
+    fn get_const(&mut self, idx: isize) {
+        let c = &self.proto.constants()[idx as usize];
+        let val = match c {
+            ConstantType::Nil => LuaValue::Nil,
+            ConstantType::Boolean(b) => LuaValue::Boolean(*b),
+            ConstantType::Integer(i) => LuaValue::Integer(*i),
+            ConstantType::Number(n) => LuaValue::Number(*n),
+            ConstantType::String(s) => LuaValue::String(s.clone()),
+        };
+        self.stack.push(val);
+    }
+
+    fn get_rk(&mut self, rk: isize) {
+        if rk > 0xFF {
+            // constant
+            self.get_const(rk & 0xFF);
+        } else {
+            // register
+            self.push_value(rk + 1);
         }
     }
 }
