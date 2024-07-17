@@ -10,7 +10,6 @@ pub const LUA_NUMBER_SIZE: u8 = 8;
 pub const LUAC_INT: i64 = 0x5678;
 pub const LUAC_NUM: f64 = 370.5;
 
-//数据类型
 pub const TAG_NIL: u8 = 0x00;
 pub const TAG_BOOLEAN: u8 = 0x01;
 pub const TAG_NUMBER: u8 = 0x03;
@@ -26,7 +25,6 @@ pub enum ConstantType {
     Number(f64),
     String(String),
 }
-
 
 #[derive(Debug)]
 struct Header {

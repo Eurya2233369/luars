@@ -1,5 +1,6 @@
 local t = {"a", "b", "c"}
 t[2] = "B"
-t["foo"] = "Bar"
-local s = t[3] .. t[2] .. t[1] .. t["foo"]
-print(#t)
+t[3] = "C"
+
+local s = t[1] .. t[2] .. t[3] .. #t
+

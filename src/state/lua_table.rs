@@ -3,7 +3,6 @@ use std::{
     collections::HashMap,
     hash::{Hash, Hasher},
     rc::Rc,
-    usize,
 };
 
 use uuid::Uuid;
@@ -12,6 +11,7 @@ use crate::math::number;
 
 use super::lua_value::LuaValue;
 
+#[derive(Clone)]
 pub struct LuaTable {
     arr: Vec<LuaValue>,
     map: HashMap<LuaValue, LuaValue>,
@@ -53,6 +53,7 @@ impl LuaTable {
         if key.is_nil() {
             panic!("table index is nil!");
         }
+
         if let LuaValue::Number(n) = key {
             if n.is_nan() {
                 panic!("table index is NaN!");
@@ -61,11 +62,11 @@ impl LuaTable {
 
         if let Some(idx) = Self::to_integer(&key) {
             let arr_len = self.arr.len();
-            let is_nil = value.is_nil();
-
             if idx <= arr_len {
+                let is_nil = value.is_nil();
+
                 self.arr[idx - 1] = value;
-                if idx == arr_len && is_nil {
+                if idx == arr_len && !is_nil {
                     self.shrink_array();
                 }
                 return;
@@ -80,10 +81,20 @@ impl LuaTable {
                 return;
             }
         }
+
+        if !value.is_nil() {
+            self.map.insert(key, value);
+        } else {
+            self.map.remove(&key);
+        }
     }
 
     pub fn len(&self) -> usize {
-        self.map.len()
+        self.arr.len()
+    }
+
+    pub fn hash_code(&self) -> Uuid {
+        self.hash
     }
 
     fn shrink_array(&mut self) {

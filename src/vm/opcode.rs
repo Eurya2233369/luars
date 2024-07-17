@@ -1,16 +1,8 @@
-use std::marker::PhantomData;
-
-use crate::api::lua_vm::LuaVM;
-
-use super::{inst_load::load_k, inst_misc::misc_move};
-
-/* 编码模式 */
 pub const OP_MODE_ABC: u8 = 0; // iABC
 pub const OP_MODE_ABX: u8 = 1; // iABx
 pub const OP_MODE_ASBX: u8 = 2; // iAsBx
 pub const OP_MODE_AX: u8 = 3; // iAx
 
-/* 操作码 */
 pub const OP_MOVE: u8 = 0x00;
 pub const OP_LOADK: u8 = 0x01;
 pub const OP_LOADKX: u8 = 0x02;
@@ -59,13 +51,11 @@ pub const OP_CLOSURE: u8 = 0x2c;
 pub const OP_VARARG: u8 = 0x2d;
 pub const OP_EXTRAARG: u8 = 0x2e;
 
-/* 操作数 */
 pub const OP_ARG_N: u8 = 0;
 pub const OP_ARG_U: u8 = 1;
 pub const OP_ARG_R: u8 = 2;
 pub const OP_ARG_K: u8 = 3;
 
-/* 指令表 */
 const OPCODES: &'static [OpCode] = &[
     opcode(OP_ARG_R, OP_ARG_N, OP_MODE_ABC, "MOVE     "), // R(A) := R(B)
     opcode(OP_ARG_K, OP_ARG_N, OP_MODE_ABX, "LOADK    "), // R(A) := Kst(Bx)

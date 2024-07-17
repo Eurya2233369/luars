@@ -1,5 +1,3 @@
-use std::isize;
-
 use crate::{
     api::{
         basic::{Arithmetic, BasicType, Comparison},
@@ -8,12 +6,7 @@ use crate::{
     binary::chunk::{ConstantType, Prototype},
 };
 
-use super::{
-    api_compare,
-    lua_stack::LuaStack,
-    lua_table::{new_table, LuaTable},
-    lua_value::LuaValue,
-};
+use super::{api_compare, lua_stack::LuaStack, lua_table::new_table, lua_value::LuaValue};
 
 #[derive(Debug)]
 pub struct LuaState {
@@ -161,6 +154,7 @@ impl LuaAPI for LuaState {
 
     fn is_string(&self, idx: isize) -> bool {
         let t = self.type_enum_id(idx);
+
         t == BasicType::LUA_TSTRING || t == BasicType::LUA_TNUMBER
     }
 
