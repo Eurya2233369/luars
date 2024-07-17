@@ -44,4 +44,14 @@ pub trait LuaState {
     /* miscellaneous functions */
     fn len(&mut self, idx: isize);
     fn concat(&mut self, n: isize);
+    /* ger functions (rust -> stack) */
+    fn new_table(&mut self);
+    fn create_table(&mut self, n_arr: usize, n_rec: usize);
+    fn get_table(&mut self, idx: isize) -> BasicType;
+    fn get_field(&mut self, idx: isize, k: &str) -> BasicType;
+    fn get_i(&mut self, idx: isize, i: i64) -> BasicType;
+    /* set functions (stack -> Lua) */
+    fn set_table(&mut self, idx: isize);
+    fn set_field(&mut self, idx: isize, k: &str);
+    fn set_i(&mut self, idx: isize, i: i64);
 }

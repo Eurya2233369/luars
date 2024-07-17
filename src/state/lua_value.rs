@@ -1,18 +1,74 @@
-use std::i64;
+use core::fmt;
+use std::{
+    cell::RefCell,
+    hash::{Hash, Hasher},
+    rc::Rc,
+};
 
 use crate::{
     api::basic::BasicType,
-    number::{number, parser},
+    math::{number, parser},
 };
 
+use super::lua_table::LuaTable;
+
 // copy ConstantType
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum LuaValue {
     Nil,
     Boolean(bool),
     Integer(i64),
     Number(f64),
     String(String),
+    Table(Rc<RefCell<LuaTable>>),
+}
+
+impl fmt::Debug for LuaValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            LuaValue::Nil => write!(f, "(nil)"),
+            LuaValue::Boolean(b) => write!(f, "({})", b),
+            LuaValue::Integer(i) => write!(f, "({})", i),
+            LuaValue::Number(n) => write!(f, "({})", n),
+            LuaValue::String(s) => write!(f, "({})", s),
+            LuaValue::Table(_) => write!(f, "()"),
+        }
+    }
+}
+
+impl PartialEq for LuaValue {
+    fn eq(&self, other: &LuaValue) -> bool {
+        if let (LuaValue::Nil, LuaValue::Nil) = (self, other) {
+            true
+        } else if let (LuaValue::Boolean(x), LuaValue::Boolean(y)) = (self, other) {
+            x == y
+        } else if let (LuaValue::Integer(x), LuaValue::Integer(y)) = (self, other) {
+            x == y
+        } else if let (LuaValue::Number(x), LuaValue::Number(y)) = (self, other) {
+            x == y
+        } else if let (LuaValue::String(x), LuaValue::String(y)) = (self, other) {
+            x == y
+        } else if let (LuaValue::Table(x), LuaValue::Table(y)) = (self, other) {
+            Rc::ptr_eq(x, y)
+        } else {
+            false
+        }
+    }
+}
+
+impl Eq for LuaValue {}
+
+impl Hash for LuaValue {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            LuaValue::Nil => 0.hash(state),
+            LuaValue::Boolean(b) => b.hash(state),
+            LuaValue::Integer(i) => i.hash(state),
+            LuaValue::Number(n) => n.to_bits().hash(state),
+            LuaValue::String(s) => s.hash(state),
+            LuaValue::Table(t) => t.borrow().hash(state),
+        }
+    }
 }
 
 impl LuaValue {
@@ -23,7 +79,7 @@ impl LuaValue {
             Self::Integer(_) => BasicType::LUA_TNUMBER,
             Self::Number(_) => BasicType::LUA_TNUMBER,
             Self::String(_) => BasicType::LUA_TSTRING,
-
+            Self::Table(_) => BasicType::LUA_TTABLE,
             _ => todo!(),
         }
     }
@@ -52,6 +108,10 @@ impl LuaValue {
             Self::String(s) => Self::str_to_integer(s),
             _ => None,
         }
+    }
+
+    pub fn is_nil(&self) -> bool {
+        matches!(self, Self::Nil)
     }
 
     fn str_to_integer(s: &str) -> Option<i64> {

@@ -1,4 +1,4 @@
-use std::usize;
+use std::isize;
 
 use crate::{
     api::{
@@ -8,8 +8,14 @@ use crate::{
     binary::chunk::{ConstantType, Prototype},
 };
 
-use super::{api_compare, lua_stack::LuaStack, lua_value::LuaValue};
+use super::{
+    api_compare,
+    lua_stack::LuaStack,
+    lua_table::{new_table, LuaTable},
+    lua_value::LuaValue,
+};
 
+#[derive(Debug)]
 pub struct LuaState {
     stack: LuaStack,
     proto: Prototype,
@@ -23,6 +29,10 @@ impl LuaState {
             proto: proto,
             pc: 0,
         }
+    }
+
+    pub fn pc(&self) -> isize {
+        self.pc
     }
 }
 
@@ -251,11 +261,14 @@ impl LuaAPI for LuaState {
 
     fn len(&mut self, idx: isize) {
         let val = self.stack.get(idx);
-        if let LuaValue::String(s) = val {
-            self.stack.push(LuaValue::Integer(s.len() as i64));
-        } else {
-            panic!("length error!")
-        }
+
+        let len = match val {
+            LuaValue::String(s) => s.len(),
+            LuaValue::Table(t) => t.borrow().len(),
+            _ => panic!("length error!"),
+        };
+
+        self.stack.push(LuaValue::Integer(len as i64));
     }
 
     fn concat(&mut self, n: isize) {
@@ -271,10 +284,62 @@ impl LuaAPI for LuaState {
                     self.stack.pop();
                     self.stack.push(LuaValue::String(s1));
                 } else {
+                    println!("{:?}", self);
                     panic!("concatenation error!");
                 }
             }
         }
+    }
+
+    /* get functions (Lua -> stack) */
+    fn new_table(&mut self) {
+        self.create_table(0, 0);
+    }
+
+    fn create_table(&mut self, n_arr: usize, n_rec: usize) {
+        self.stack.push(new_table(n_arr, n_rec));
+    }
+
+    fn get_table(&mut self, idx: isize) -> BasicType {
+        let t = self.stack.get(idx);
+        let k = self.stack.pop();
+        self.get_table_impl(&t, &k)
+    }
+
+    fn get_field(&mut self, idx: isize, k: &str) -> BasicType {
+        let t = self.stack.get(idx);
+        let k = LuaValue::String(k.to_string());
+        // TODO
+        self.get_table_impl(&t, &k)
+    }
+
+    fn get_i(&mut self, idx: isize, i: i64) -> BasicType {
+        let t = self.stack.get(idx);
+        let k = LuaValue::Integer(i);
+        self.get_table_impl(&t, &k)
+    }
+
+    /* set functions (stack -> Lua) */
+    fn set_table(&mut self, idx: isize) {
+        let t = self.stack.get(idx);
+        let v = self.stack.pop();
+        let k = self.stack.pop();
+        LuaState::set_table_impl(&t, k, v);
+    }
+
+    fn set_field(&mut self, idx: isize, k: &str) {
+        let t = self.stack.get(idx);
+        let v = self.stack.pop();
+        let k = LuaValue::String(k.to_string());
+        // TODO
+        LuaState::set_table_impl(&t, k, v);
+    }
+
+    fn set_i(&mut self, idx: isize, i: i64) {
+        let t = self.stack.get(idx);
+        let v = self.stack.pop();
+        let k = LuaValue::Integer(i);
+        LuaState::set_table_impl(&t, k, v);
     }
 }
 
@@ -312,6 +377,27 @@ impl LuaVM for LuaState {
         } else {
             // register
             self.push_value(rk + 1);
+        }
+    }
+}
+
+impl LuaState {
+    fn get_table_impl(&mut self, t: &LuaValue, k: &LuaValue) -> BasicType {
+        if let LuaValue::Table(tbl) = t {
+            let v = tbl.borrow().get(k);
+            let type_id = v.type_id();
+            self.stack.push(v);
+            type_id
+        } else {
+            panic!("not a table!"); // TODO
+        }
+    }
+
+    fn set_table_impl(t: &LuaValue, k: LuaValue, v: LuaValue) {
+        if let LuaValue::Table(tbl) = t {
+            tbl.borrow_mut().put(k, v);
+        } else {
+            panic!("not a table!");
         }
     }
 }

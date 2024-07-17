@@ -1,6 +1,6 @@
 use crate::{
     api::basic::Arithmetic,
-    number::number::{f_floor_div, f_mod, i_floor_div, i_mod, shift_left, shift_right},
+    math::number::{f_floor_div, f_mod, i_floor_div, i_mod, shift_left, shift_right},
 };
 
 use super::lua_value::LuaValue;

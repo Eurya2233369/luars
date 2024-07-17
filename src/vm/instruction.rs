@@ -9,11 +9,12 @@ use super::{
         binary_mod, binary_mul, binary_pow, binary_shl, binary_shr, binary_sub, binary_unm, concat,
         eq, le, len, lt, not, test, test_set,
     },
+    inst_table::{get_table, new_table, set_list, set_table},
     opcode::{
         code_map, OP_ADD, OP_BAND, OP_BNOT, OP_BOR, OP_BXOR, OP_CONCAT, OP_DIV, OP_EQ, OP_FORLOOP,
-        OP_FORPREP, OP_IDIV, OP_JMP, OP_LE, OP_LEN, OP_LOADBOOL, OP_LOADK, OP_LOADKX, OP_LOADNIL,
-        OP_LT, OP_MOD, OP_MOVE, OP_MUL, OP_NOT, OP_POW, OP_SHL, OP_SHR, OP_SUB, OP_TEST,
-        OP_TESTSET, OP_UNM,
+        OP_FORPREP, OP_GETTABLE, OP_IDIV, OP_JMP, OP_LE, OP_LEN, OP_LOADBOOL, OP_LOADK, OP_LOADKX,
+        OP_LOADNIL, OP_LT, OP_MOD, OP_MOVE, OP_MUL, OP_NEWTABLE, OP_NOT, OP_POW, OP_SETLIST,
+        OP_SETTABLE, OP_SHL, OP_SHR, OP_SUB, OP_TEST, OP_TESTSET, OP_UNM,
     },
 };
 
@@ -83,7 +84,11 @@ impl Instruction for u32 {
             OP_LOADKX => load_kx(self, vm),
             OP_LOADBOOL => load_bool(self, vm),
             OP_LOADNIL => load_nil(self, vm),
-
+            // TODO
+            OP_GETTABLE => get_table(self, vm),
+            OP_SETTABLE => set_table(self, vm),
+            OP_NEWTABLE => new_table(self, vm),
+            // TODO
             OP_ADD => binary_add(self, vm),
             OP_SUB => binary_sub(self, vm),
             OP_MUL => binary_mul(self, vm),
@@ -107,9 +112,11 @@ impl Instruction for u32 {
             OP_LE => le(self, vm),
             OP_TEST => test(self, vm),
             OP_TESTSET => test_set(self, vm),
-
+            // TODO
             OP_FORLOOP => for_loop(self, vm),
             OP_FORPREP => for_prep(self, vm),
+            // TODO
+            OP_SETLIST => set_list(self, vm),
             _ => {
                 dbg!(self.opname());
                 unimplemented!()
