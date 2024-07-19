@@ -15,12 +15,12 @@ use super::lua_value::LuaValue;
 pub struct LuaTable {
     arr: Vec<LuaValue>,
     map: HashMap<LuaValue, LuaValue>,
-    hash: Uuid,
+    uuid: Uuid,
 }
 
 impl Hash for LuaTable {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.hash.hash(state);
+        self.uuid.hash(state);
     }
 }
 
@@ -29,7 +29,7 @@ impl LuaTable {
         Self {
             arr: Vec::with_capacity(n_arr),
             map: HashMap::with_capacity(n_rec),
-            hash: Uuid::new_v4(),
+            uuid: Uuid::new_v4(),
         }
     }
 
@@ -94,7 +94,7 @@ impl LuaTable {
     }
 
     pub fn hash_code(&self) -> Uuid {
-        self.hash
+        self.uuid
     }
 
     fn shrink_array(&mut self) {

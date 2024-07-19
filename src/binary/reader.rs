@@ -1,12 +1,14 @@
+use std::rc::Rc;
+
 use super::chunk::{self, LocVar, Prototype, PrototypeBuilder, Upvalue};
 
 #[derive(Debug)]
-pub struct Reader<'a> {
-    data: &'a mut Vec<u8>,
+pub struct Reader {
+    data: Vec<u8>,
 }
 
-impl<'a> Reader<'a> {
-    pub fn new(data: &'a mut Vec<u8>) -> Self {
+impl Reader {
+    pub fn new(data: Vec<u8>) -> Self {
         Reader { data }
     }
 
@@ -93,27 +95,28 @@ impl<'a> Reader<'a> {
         bytes
     }
 
-    pub fn read_proto(&mut self, parent_source: &str) -> Prototype {
+    pub fn read_proto(&mut self, parent_source: &str) -> Rc<Prototype> {
         let mut source: String = self.read_string();
         if source.is_empty() {
             source = parent_source.to_string();
         }
-
-        PrototypeBuilder::new()
-            .with_source(source.clone())
-            .with_line_defined(self.read_u32())
-            .with_last_line_defined(self.read_u32())
-            .with_num_params(self.read_byte())
-            .with_is_vararg(self.read_byte())
-            .with_max_stack_size(self.read_byte())
-            .with_code(self.read_func(|r| r.read_u32()))
-            .with_constants(self.read_func(|r| r.read_constant()))
-            .with_upvalues(self.read_func(|r| r.read_upvalue()))
-            .with_protos(self.read_func(|r| r.read_proto(source.as_str())))
-            .with_line_info(self.read_func(|r| r.read_u32()))
-            .with_locvars(self.read_func(|r| r.read_locvar()))
-            .with_upvalue_names(self.read_func(|r| r.read_string()))
-            .build()
+        Rc::new(
+            PrototypeBuilder::new()
+                .with_source(source.clone())
+                .with_line_defined(self.read_u32())
+                .with_last_line_defined(self.read_u32())
+                .with_num_params(self.read_byte())
+                .with_is_vararg(self.read_byte())
+                .with_max_stack_size(self.read_byte())
+                .with_code(self.read_func(|r| r.read_u32()))
+                .with_constants(self.read_func(|r| r.read_constant()))
+                .with_upvalues(self.read_func(|r| r.read_upvalue()))
+                .with_protos(self.read_func(|r| r.read_proto(source.as_str())))
+                .with_line_info(self.read_func(|r| r.read_u32()))
+                .with_locvars(self.read_func(|r| r.read_locvar()))
+                .with_upvalue_names(self.read_func(|r| r.read_string()))
+                .build(),
+        )
     }
 
     fn read_func<T, F>(&mut self, func: F) -> Vec<T>

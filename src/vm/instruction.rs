@@ -1,21 +1,13 @@
 use crate::api::lua_vm::LuaVM;
 
 use super::{
-    inst_for::{for_loop, for_prep},
-    inst_load::{load_bool, load_k, load_kx, load_nil},
-    inst_misc::{misc_jump, misc_move},
-    inst_operators::{
+    inst_call::{call, call_return, closure, tail_call, vararg}, inst_for::{for_loop, for_prep}, inst_load::{load_bool, load_k, load_kx, load_nil}, inst_misc::{misc_jump, misc_move}, inst_operators::{
         binary_add, binary_band, binary_bnot, binary_bor, binary_bxor, binary_div, binary_idiv,
         binary_mod, binary_mul, binary_pow, binary_shl, binary_shr, binary_sub, binary_unm, concat,
         eq, le, len, lt, not, test, test_set,
-    },
-    inst_table::{get_table, new_table, set_list, set_table},
-    opcode::{
-        code_map, OP_ADD, OP_BAND, OP_BNOT, OP_BOR, OP_BXOR, OP_CONCAT, OP_DIV, OP_EQ, OP_FORLOOP,
-        OP_FORPREP, OP_GETTABLE, OP_IDIV, OP_JMP, OP_LE, OP_LEN, OP_LOADBOOL, OP_LOADK, OP_LOADKX,
-        OP_LOADNIL, OP_LT, OP_MOD, OP_MOVE, OP_MUL, OP_NEWTABLE, OP_NOT, OP_POW, OP_SETLIST,
-        OP_SETTABLE, OP_SHL, OP_SHR, OP_SUB, OP_TEST, OP_TESTSET, OP_UNM,
-    },
+    }, inst_table::{get_table, new_table, set_list, set_table}, opcode::{
+        code_map, OP_ADD, OP_BAND, OP_BNOT, OP_BOR, OP_BXOR, OP_CALL, OP_CLOSURE, OP_CONCAT, OP_DIV, OP_EQ, OP_FORLOOP, OP_FORPREP, OP_GETTABLE, OP_IDIV, OP_JMP, OP_LE, OP_LEN, OP_LOADBOOL, OP_LOADK, OP_LOADKX, OP_LOADNIL, OP_LT, OP_MOD, OP_MOVE, OP_MUL, OP_NEWTABLE, OP_NOT, OP_POW, OP_RETURN, OP_SELF, OP_SETLIST, OP_SETTABLE, OP_SHL, OP_SHR, OP_SUB, OP_TAILCALL, OP_TEST, OP_TESTSET, OP_UNM, OP_VARARG
+    }
 };
 
 const MAXARG_BX: isize = (1 << 18) - 1; // 2^18 - 1
@@ -88,7 +80,7 @@ impl Instruction for u32 {
             OP_GETTABLE => get_table(self, vm),
             OP_SETTABLE => set_table(self, vm),
             OP_NEWTABLE => new_table(self, vm),
-            // TODO
+            OP_SELF => call_return(self, vm),
             OP_ADD => binary_add(self, vm),
             OP_SUB => binary_sub(self, vm),
             OP_MUL => binary_mul(self, vm),
@@ -112,11 +104,15 @@ impl Instruction for u32 {
             OP_LE => le(self, vm),
             OP_TEST => test(self, vm),
             OP_TESTSET => test_set(self, vm),
-            // TODO
+            OP_CALL => call(self, vm),
+            OP_TAILCALL => tail_call(self, vm),
+            OP_RETURN => call_return(self, vm),
             OP_FORLOOP => for_loop(self, vm),
             OP_FORPREP => for_prep(self, vm),
             // TODO
             OP_SETLIST => set_list(self, vm),
+            OP_CLOSURE => closure(self, vm),
+            OP_VARARG => vararg(self, vm),
             _ => {
                 dbg!(self.opname());
                 unimplemented!()

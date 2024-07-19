@@ -1,14 +1,15 @@
+mod closure;
 mod lua_stack;
 mod lua_state;
 mod lua_table;
 mod lua_value;
 // mod api_stack;
 mod api_arith;
+// mod api_call;
 mod api_compare;
 
 pub use self::lua_state::LuaState;
-use crate::binary::chunk::Prototype;
 
-pub fn new_lua_state(stack_size: usize, proto: Prototype) -> LuaState {
-    LuaState::new(stack_size, proto)
+pub fn new_lua_state() -> LuaState {
+    LuaState::new()
 }

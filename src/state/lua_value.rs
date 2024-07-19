@@ -10,7 +10,7 @@ use crate::{
     math::{number, parser},
 };
 
-use super::lua_table::LuaTable;
+use super::{closure::Closure, lua_table::LuaTable};
 
 // copy ConstantType
 #[derive(Clone)]
@@ -21,6 +21,7 @@ pub enum LuaValue {
     Number(f64),
     String(String),
     Table(Rc<RefCell<LuaTable>>),
+    Function(Rc<Closure>),
 }
 
 impl fmt::Debug for LuaValue {
@@ -32,6 +33,7 @@ impl fmt::Debug for LuaValue {
             LuaValue::Number(n) => write!(f, "({})", n),
             LuaValue::String(s) => write!(f, "({})", s),
             LuaValue::Table(_) => write!(f, "()"),
+            LuaValue::Function(_) => write!(f, "(function)"),
         }
     }
 }
@@ -50,6 +52,8 @@ impl PartialEq for LuaValue {
             x == y
         } else if let (LuaValue::Table(x), LuaValue::Table(y)) = (self, other) {
             Rc::ptr_eq(x, y)
+        } else if let (LuaValue::Function(x), LuaValue::Function(y)) = (self, other) {
+            Rc::ptr_eq(x, y)
         } else {
             false
         }
@@ -67,6 +71,7 @@ impl Hash for LuaValue {
             LuaValue::Number(n) => n.to_bits().hash(state),
             LuaValue::String(s) => s.hash(state),
             LuaValue::Table(t) => t.borrow().hash(state),
+            LuaValue::Function(c) => c.hash(state),
         }
     }
 }
@@ -80,6 +85,7 @@ impl LuaValue {
             Self::Number(_) => BasicType::LUA_TNUMBER,
             Self::String(_) => BasicType::LUA_TSTRING,
             Self::Table(_) => BasicType::LUA_TTABLE,
+            Self::Function(_) => BasicType::LUA_TFUNCTION,
             _ => todo!(),
         }
     }

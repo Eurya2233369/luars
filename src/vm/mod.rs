@@ -1,4 +1,5 @@
 mod fpd;
+mod inst_call;
 mod inst_for;
 mod inst_load;
 mod inst_misc;

@@ -1,14 +1,22 @@
-use super::lua_value::LuaValue;
+use std::rc::Rc;
+
+use super::{closure::Closure, lua_value::LuaValue};
 
 #[derive(Debug)]
 pub struct LuaStack {
     slot: Vec<LuaValue>,
+    pub closure: Rc<Closure>,
+    pub varargs: Vec<LuaValue>,
+    pub pc: isize,
 }
 
 impl LuaStack {
-    pub fn new(size: usize) -> Self {
+    pub fn new(size: usize, closure: Rc<Closure>) -> Self {
         Self {
             slot: Vec::with_capacity(size),
+            closure,
+            varargs: Vec::new(),
+            pc: 0,
         }
     }
 
@@ -24,8 +32,49 @@ impl LuaStack {
         self.slot.push(val);
     }
 
+    pub fn push_n(&mut self, mut vals: Vec<LuaValue>, n: isize) {
+        vals.reverse();
+        let nvals = vals.len();
+        let un = if n < 0 { nvals } else { n as usize };
+
+        for i in 0..un {
+            if i < nvals {
+                self.push(vals.pop().unwrap());
+            } else {
+                self.push(LuaValue::Nil);
+            }
+        }
+    }
+
     pub fn pop(&mut self) -> LuaValue {
         self.slot.pop().unwrap()
+    }
+
+    pub fn pop_n(&mut self, n: usize) -> Vec<LuaValue> {
+        let mut vec = Vec::with_capacity(n);
+        for _ in 0..n {
+            vec.push(self.pop());
+        }
+        vec.reverse();
+        vec
+    }
+
+    pub fn set_top(&mut self, idx: isize) {
+        let new_top = self.abs_index(idx);
+        if new_top < 0 {
+            panic!("stack underflow!");
+        }
+
+        let n = self.top() - new_top;
+        if n > 0 {
+            for _ in 0..n {
+                self.pop();
+            }
+        } else if n < 0 {
+            for _ in n..0 {
+                self.push(LuaValue::Nil);
+            }
+        }
     }
 
     pub fn abs_index(&self, idx: isize) -> isize {

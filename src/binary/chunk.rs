@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 pub const LUA_SIGNATURE: &[u8; 4] = b"\x1bLua";
 pub const LUAC_VERSION: u8 = 0x53;
 pub const LUAC_FORMAT: u8 = 0;
@@ -52,7 +54,7 @@ pub struct Prototype {
     code: Vec<u32>,
     constants: Vec<ConstantType>,
     upvalues: Vec<Upvalue>,
-    protos: Vec<Prototype>,
+    protos: Vec<Rc<Prototype>>,
     line_info: Vec<u32>,
     locvars: Vec<LocVar>,
     upvalue_names: Vec<String>,
@@ -112,7 +114,7 @@ impl Prototype {
         &self.upvalues
     }
 
-    pub fn protos(&self) -> &Vec<Prototype> {
+    pub fn protos(&self) -> &Vec<Rc<Prototype>> {
         &self.protos
     }
 
@@ -133,19 +135,19 @@ impl PrototypeBuilder {
     pub fn new() -> Self {
         Self {
             data: Prototype {
-                source: "".to_string(),
+                source: String::new(),
                 line_defined: 0,
                 last_line_defined: 0,
                 num_params: 0,
                 is_vararg: 0,
                 max_stack_size: 0,
-                code: Vec::new(),
-                constants: Vec::new(),
-                upvalues: Vec::new(),
-                protos: Vec::new(),
-                line_info: Vec::new(),
-                locvars: Vec::new(),
-                upvalue_names: Vec::new(),
+                code: vec![],
+                constants: vec![],
+                upvalues: vec![],
+                protos: vec![],
+                line_info: vec![],
+                locvars: vec![],
+                upvalue_names: vec![],
             },
         }
     }
@@ -195,7 +197,7 @@ impl PrototypeBuilder {
         self
     }
 
-    pub fn with_protos(mut self, protos: Vec<Prototype>) -> Self {
+    pub fn with_protos(mut self, protos: Vec<Rc<Prototype>>) -> Self {
         self.data.protos = protos;
         self
     }
