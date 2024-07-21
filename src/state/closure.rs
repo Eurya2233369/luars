@@ -30,7 +30,7 @@ impl Closure {
     }
 
     pub fn proto(&self) -> &Rc<Prototype> {
-        &self.proto.borrow()
+        self.proto.borrow()
     }
 }
 

@@ -7,12 +7,17 @@ use crate::{
     },
     binary::{
         self,
-        chunk::{ConstantType, PrototypeBuilder},
-    }, vm::instruction::Instruction,
+        chunk::{ConstantType, Prototype},
+    },
+    vm::instruction::Instruction,
 };
 
 use super::{
-    api_compare, closure::{self, Closure}, lua_stack::LuaStack, lua_table::new_table, lua_value::LuaValue,
+    api_compare,
+    closure::{self, Closure},
+    lua_stack::LuaStack,
+    lua_table::new_table,
+    lua_value::LuaValue,
 };
 
 #[derive(Debug)]
@@ -22,7 +27,7 @@ pub struct LuaState {
 
 impl LuaState {
     pub fn new() -> Self {
-        let fake_proto = Rc::new(PrototypeBuilder::new().build());
+        let fake_proto = Rc::new(Prototype::new());
         let fake_closure = Rc::new(Closure::new(fake_proto));
         let fake_frame = LuaStack::new(20, fake_closure);
         Self {
@@ -74,7 +79,10 @@ impl LuaAPI for LuaState {
 
     fn push_value(&mut self, idx: isize) {
         let val = self.stack().get(idx);
+        // println!("push_value open {:?}", self.stack());
+
         self.stack_mut().push(val);
+        // println!("push_value closed {:?}", self.stack());
     }
 
     fn replace(&mut self, idx: isize) {
@@ -363,7 +371,6 @@ impl LuaAPI for LuaState {
 
     fn call(&mut self, n_args: usize, n_results: isize) {
         let val = self.stack().get(-(n_args as isize + 1));
-        println!("{:?}", val);
         if let LuaValue::Function(c) = val {
             let source = c.proto().source();
             let line = c.proto().line_defined();
@@ -431,6 +438,14 @@ impl LuaVM for LuaState {
         let proto = self.stack().closure.proto().protos()[idx].clone();
         let closure = closure::new_lua_closure(proto);
         self.stack_mut().push(closure);
+    }
+
+    fn stack_open(&self, s: &str) {
+        println!("{s} open {:?}", self.stack());
+    }
+
+    fn stack_closed(&self, s: &str) {
+        println!("{s} closed {:?}", self.stack());
     }
 }
 

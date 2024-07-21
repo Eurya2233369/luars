@@ -60,10 +60,6 @@ pub struct Prototype {
     upvalue_names: Vec<String>,
 }
 
-pub struct PrototypeBuilder {
-    data: Prototype,
-}
-
 #[derive(Debug)]
 pub struct Upvalue {
     pub instack: u8,
@@ -78,6 +74,88 @@ pub struct LocVar {
 }
 
 impl Prototype {
+    pub fn new() -> Self {
+        Self {
+            source: String::new(),
+            line_defined: 0,
+            last_line_defined: 0,
+            num_params: 0,
+            is_vararg: 0,
+            max_stack_size: 0,
+            code: vec![],
+            constants: vec![],
+            upvalues: vec![],
+            protos: vec![],
+            line_info: vec![],
+            locvars: vec![],
+            upvalue_names: vec![],
+        }
+    }
+
+    pub fn set_source(mut self, source: String) -> Self {
+        self.source = source;
+        self
+    }
+
+    pub fn set_line_defined(mut self, line_defined: u32) -> Self {
+        self.line_defined = line_defined;
+        self
+    }
+
+    pub fn set_last_line_defined(mut self, last_line_defined: u32) -> Self {
+        self.last_line_defined = last_line_defined;
+        self
+    }
+
+    pub fn set_num_params(mut self, num_params: u8) -> Self {
+        self.num_params = num_params;
+        self
+    }
+
+    pub fn set_is_vararg(mut self, is_vararg: u8) -> Self {
+        self.is_vararg = is_vararg;
+        self
+    }
+
+    pub fn set_max_stack_size(mut self, max_stack_size: u8) -> Self {
+        self.max_stack_size = max_stack_size;
+        self
+    }
+
+    pub fn set_code(mut self, code: Vec<u32>) -> Self {
+        self.code = code;
+        self
+    }
+
+    pub fn set_constants(mut self, constants: Vec<ConstantType>) -> Self {
+        self.constants = constants;
+        self
+    }
+
+    pub fn set_upvalues(mut self, upvalues: Vec<Upvalue>) -> Self {
+        self.upvalues = upvalues;
+        self
+    }
+
+    pub fn set_protos(mut self, protos: Vec<Rc<Prototype>>) -> Self {
+        self.protos = protos;
+        self
+    }
+    pub fn set_line_info(mut self, line_info: Vec<u32>) -> Self {
+        self.line_info = line_info;
+        self
+    }
+
+    pub fn set_locvars(mut self, loc_vars: Vec<LocVar>) -> Self {
+        self.locvars = loc_vars;
+        self
+    }
+
+    pub fn set_upvalue_names(mut self, upvalue_names: Vec<String>) -> Self {
+        self.upvalue_names = upvalue_names;
+        self
+    }
+
     pub fn source(&self) -> &str {
         &self.source
     }
@@ -128,95 +206,5 @@ impl Prototype {
 
     pub fn upvalue_names(&self) -> &Vec<String> {
         &self.upvalue_names
-    }
-}
-
-impl PrototypeBuilder {
-    pub fn new() -> Self {
-        Self {
-            data: Prototype {
-                source: String::new(),
-                line_defined: 0,
-                last_line_defined: 0,
-                num_params: 0,
-                is_vararg: 0,
-                max_stack_size: 0,
-                code: vec![],
-                constants: vec![],
-                upvalues: vec![],
-                protos: vec![],
-                line_info: vec![],
-                locvars: vec![],
-                upvalue_names: vec![],
-            },
-        }
-    }
-
-    pub fn with_source(mut self, source: String) -> Self {
-        self.data.source = source;
-        self
-    }
-
-    pub fn with_line_defined(mut self, line_defined: u32) -> Self {
-        self.data.line_defined = line_defined;
-        self
-    }
-
-    pub fn with_last_line_defined(mut self, last_line_defined: u32) -> Self {
-        self.data.last_line_defined = last_line_defined;
-        self
-    }
-
-    pub fn with_num_params(mut self, num_params: u8) -> Self {
-        self.data.num_params = num_params;
-        self
-    }
-
-    pub fn with_is_vararg(mut self, is_vararg: u8) -> Self {
-        self.data.is_vararg = is_vararg;
-        self
-    }
-
-    pub fn with_max_stack_size(mut self, max_stack_size: u8) -> Self {
-        self.data.max_stack_size = max_stack_size;
-        self
-    }
-
-    pub fn with_code(mut self, code: Vec<u32>) -> Self {
-        self.data.code = code;
-        self
-    }
-
-    pub fn with_constants(mut self, constants: Vec<ConstantType>) -> Self {
-        self.data.constants = constants;
-        self
-    }
-
-    pub fn with_upvalues(mut self, upvalues: Vec<Upvalue>) -> Self {
-        self.data.upvalues = upvalues;
-        self
-    }
-
-    pub fn with_protos(mut self, protos: Vec<Rc<Prototype>>) -> Self {
-        self.data.protos = protos;
-        self
-    }
-    pub fn with_line_info(mut self, line_info: Vec<u32>) -> Self {
-        self.data.line_info = line_info;
-        self
-    }
-
-    pub fn with_locvars(mut self, loc_vars: Vec<LocVar>) -> Self {
-        self.data.locvars = loc_vars;
-        self
-    }
-
-    pub fn with_upvalue_names(mut self, upvalue_names: Vec<String>) -> Self {
-        self.data.upvalue_names = upvalue_names;
-        self
-    }
-
-    pub fn build(self) -> Prototype {
-        self.data
     }
 }

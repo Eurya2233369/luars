@@ -9,4 +9,6 @@ pub trait LuaVM: LuaAPI {
     fn register_count(&self) -> usize;
     fn load_vararg(&mut self, n: isize);
     fn load_proto(&mut self, idx: usize);
+    fn stack_open(&self, s: &str);
+    fn stack_closed(&self, s: &str);
 }

@@ -5,21 +5,26 @@ mod state;
 mod vm;
 
 use std::{
-    env, fs::File, io::{BufReader, Read}, path::Path
+    env,
+    fs::File,
+    io::{BufReader, Read},
+    path::Path,
 };
 
 use crate::api::lua_vm::LuaAPI;
 
 fn main() {
-    let filename = env::args().nth(1).unwrap();
-    match read_file(filename) {
-        Ok(data) => {
-            let mut ls = state::new_lua_state();
-            ls.load(data, "test.lua", "b");
-            ls.call(0, 0);
-        }
-        Err(e) => {
-            eprintln!("Error reading file: {}", e);
+    if env::args().len() > 1 {
+        let filename = env::args().nth(1).unwrap();
+        match read_file(filename) {
+            Ok(data) => {
+                let mut ls = state::new_lua_state();
+                ls.load(data, "test.lua", "b");
+                ls.call(0, 0);
+            }
+            Err(e) => {
+                eprintln!("Error reading file: {}", e);
+            }
         }
     }
 }

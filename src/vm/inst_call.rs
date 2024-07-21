@@ -8,7 +8,6 @@ pub fn closure(i: u32, vm: &mut dyn LuaVM) {
 
     vm.load_proto(bx as usize);
     vm.replace(a);
-
 }
 
 pub fn call(i: u32, vm: &mut dyn LuaVM) {
@@ -35,17 +34,19 @@ fn push_func_and_args(a: isize, b: isize, vm: &mut dyn LuaVM) -> usize {
 }
 
 fn pop_results(a: isize, c: isize, vm: &mut dyn LuaVM) {
-    if c == 1 {
-    } else if c > 1 {
-        for i in (a..(a + c - 1)).rev() {
-            vm.replace(i);
+    match c.cmp(&1) {
+        std::cmp::Ordering::Less => {
+            vm.check_stack(1);
+            vm.push_integer(a as i64);
         }
-    } else {
-        vm.check_stack(1);
-        vm.push_integer(a as i64);
+        std::cmp::Ordering::Equal => { /* ignored */ }
+        std::cmp::Ordering::Greater => {
+            for i in (a..(a + c - 1)).rev() {
+                vm.replace(i);
+            }
+        }
     }
 }
-
 
 fn fix_stack(a: isize, vm: &mut dyn LuaVM) {
     let x = vm.to_integer(-1) as isize;
@@ -58,20 +59,22 @@ fn fix_stack(a: isize, vm: &mut dyn LuaVM) {
     vm.rotate(vm.register_count() as isize + 1, x - a);
 }
 
-
 // return R(A), ... ,R(A+B-2)
 pub fn call_return(i: u32, vm: &mut dyn LuaVM) {
     let (mut a, b, _) = i.abc();
     a += 1;
 
-    if b == 1 {
-    } else if b > 1 {
-        vm.check_stack(b as usize - 1);
-        for i in a..(a + b - 1) {
-            vm.push_value(i);
+    match b.cmp(&1) {
+        std::cmp::Ordering::Less => {
+            fix_stack(a, vm);
         }
-    } else {
-        fix_stack(a, vm);
+        std::cmp::Ordering::Equal => { /* ignored */ }
+        std::cmp::Ordering::Greater => {
+            vm.check_stack(b as usize - 1);
+            for i in a..(a + b - 1) {
+                vm.push_value(i);
+            }
+        }
     }
 }
 

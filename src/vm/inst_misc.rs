@@ -7,7 +7,7 @@ pub fn misc_move(i: u32, vm: &mut dyn LuaVM) {
     a += 1;
     b += 1;
 
-    vm.copy(a, b);
+    vm.copy(b, a);
 }
 
 // pc+=sBx; if (A) close all upvalues >= R(A - 1)

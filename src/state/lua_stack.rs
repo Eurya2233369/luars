@@ -66,15 +66,19 @@ impl LuaStack {
         }
 
         let n = self.top() - new_top;
-        if n > 0 {
-            for _ in 0..n {
-                self.pop();
+        match n.cmp(&0) {
+            std::cmp::Ordering::Less => {
+                for _ in n..0 {
+                    self.push(LuaValue::Nil);
+                }
             }
-        } else if n < 0 {
-            for _ in n..0 {
-                self.push(LuaValue::Nil);
+            std::cmp::Ordering::Equal => { /* ignored */ }
+            std::cmp::Ordering::Greater => {
+                for _ in 0..n {
+                    self.pop();
+                }
             }
-        }
+        } 
     }
 
     pub fn abs_index(&self, idx: isize) -> isize {

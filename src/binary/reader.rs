@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::chunk::{self, LocVar, Prototype, PrototypeBuilder, Upvalue};
+use super::chunk::{self, LocVar, Prototype, Upvalue};
 
 #[derive(Debug)]
 pub struct Reader {
@@ -101,21 +101,20 @@ impl Reader {
             source = parent_source.to_string();
         }
         Rc::new(
-            PrototypeBuilder::new()
-                .with_source(source.clone())
-                .with_line_defined(self.read_u32())
-                .with_last_line_defined(self.read_u32())
-                .with_num_params(self.read_byte())
-                .with_is_vararg(self.read_byte())
-                .with_max_stack_size(self.read_byte())
-                .with_code(self.read_func(|r| r.read_u32()))
-                .with_constants(self.read_func(|r| r.read_constant()))
-                .with_upvalues(self.read_func(|r| r.read_upvalue()))
-                .with_protos(self.read_func(|r| r.read_proto(source.as_str())))
-                .with_line_info(self.read_func(|r| r.read_u32()))
-                .with_locvars(self.read_func(|r| r.read_locvar()))
-                .with_upvalue_names(self.read_func(|r| r.read_string()))
-                .build(),
+            Prototype::new()
+                .set_source(source.clone())
+                .set_line_defined(self.read_u32())
+                .set_last_line_defined(self.read_u32())
+                .set_num_params(self.read_byte())
+                .set_is_vararg(self.read_byte())
+                .set_max_stack_size(self.read_byte())
+                .set_code(self.read_func(|r| r.read_u32()))
+                .set_constants(self.read_func(|r| r.read_constant()))
+                .set_upvalues(self.read_func(|r| r.read_upvalue()))
+                .set_protos(self.read_func(|r| r.read_proto(source.as_str())))
+                .set_line_info(self.read_func(|r| r.read_u32()))
+                .set_locvars(self.read_func(|r| r.read_locvar()))
+                .set_upvalue_names(self.read_func(|r| r.read_string())),
         )
     }
 

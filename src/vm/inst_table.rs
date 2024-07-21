@@ -42,7 +42,7 @@ pub fn set_list(i: u32, vm: &mut dyn LuaVM) {
     a += 1;
 
     if c > 0 {
-        c = c - 1;
+        c -= 1;
     } else {
         c = vm.fetch().ax();
     }
