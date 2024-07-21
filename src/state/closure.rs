@@ -4,36 +4,46 @@ use std::{
     rc::Rc,
 };
 
-use uuid::Uuid;
-
-use crate::binary::chunk::Prototype;
-
-use super::lua_value::LuaValue;
+use crate::{api::lua_vm::RustFn, binary::chunk::Prototype};
 
 #[derive(Debug)]
 pub struct Closure {
     proto: Rc<Prototype>,
-    uuid: Uuid,
+    rust_fn: Option<RustFn>,
+    address: usize,
 }
 
 impl Hash for Closure {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.uuid.hash(state);
+        self.address.hash(state);
     }
 }
 impl Closure {
     pub fn new(proto: Rc<Prototype>) -> Self {
-        Self {
+        let mut this = Self {
             proto,
-            uuid: Uuid::new_v4(),
-        }
+            rust_fn: None,
+            address: 0,
+        };
+        this.address = std::ptr::addr_of!(this) as usize;
+        this
+    }
+
+    pub fn new_lua_closure(proto: Rc<Prototype>) -> Self {
+        Self::new(proto)
+    }
+
+    pub fn new_rust_closure(f: RustFn) -> Self {
+        let mut this = Self::new(Rc::new(Prototype::new()));
+        this.rust_fn = Some(f);
+        this
     }
 
     pub fn proto(&self) -> &Rc<Prototype> {
         self.proto.borrow()
     }
-}
 
-pub fn new_lua_closure(proto: Rc<Prototype>) -> LuaValue {
-    LuaValue::Function(Rc::new(Closure::new(proto)))
+    pub fn rust_fn(&self) -> Option<RustFn> {
+        self.rust_fn
+    }
 }

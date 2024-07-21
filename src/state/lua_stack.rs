@@ -1,19 +1,23 @@
 use std::rc::Rc;
 
+use crate::api::basic::LUA_REGISTRYINDEX;
+
 use super::{closure::Closure, lua_value::LuaValue};
 
 #[derive(Debug)]
 pub struct LuaStack {
     slot: Vec<LuaValue>,
+    registry: LuaValue,
     pub closure: Rc<Closure>,
     pub varargs: Vec<LuaValue>,
     pub pc: isize,
 }
 
 impl LuaStack {
-    pub fn new(size: usize, closure: Rc<Closure>) -> Self {
+    pub fn new(size: usize, registry: LuaValue, closure: Rc<Closure>) -> Self {
         Self {
             slot: Vec::with_capacity(size),
+            registry,
             closure,
             varargs: Vec::new(),
             pc: 0,
@@ -78,11 +82,11 @@ impl LuaStack {
                     self.pop();
                 }
             }
-        } 
+        }
     }
 
     pub fn abs_index(&self, idx: isize) -> isize {
-        if idx >= 0 {
+        if idx >= 0 || idx <= LUA_REGISTRYINDEX {
             idx
         } else {
             idx + self.top() + 1
@@ -90,22 +94,34 @@ impl LuaStack {
     }
 
     pub fn is_valid(&self, idx: isize) -> bool {
-        let abs_idx = self.abs_index(idx);
-        abs_idx > 0 && abs_idx <= self.top()
+        if idx == LUA_REGISTRYINDEX {
+            true
+        } else {
+            let abs_idx = self.abs_index(idx);
+            abs_idx > 0 && abs_idx <= self.top()
+        }
     }
 
     pub fn get(&self, idx: isize) -> LuaValue {
-        let abs_idx = self.abs_index(idx);
-
-        if abs_idx > 0 && abs_idx <= self.top() {
-            let idx = abs_idx as usize - 1;
-            self.slot[idx].clone()
+        if idx == LUA_REGISTRYINDEX {
+            self.registry.clone()
         } else {
-            LuaValue::Nil
+            let abs_idx = self.abs_index(idx);
+            if abs_idx > 0 && abs_idx <= self.top() {
+                let idx = abs_idx as usize - 1;
+                self.slot[idx].clone()
+            } else {
+                LuaValue::Nil
+            }
         }
     }
 
     pub fn set(&mut self, idx: isize, val: LuaValue) {
+        if idx == LUA_REGISTRYINDEX {
+            self.registry = val;
+            return;
+        }
+
         let abs_idx = self.abs_index(idx);
         if abs_idx > 0 && abs_idx <= self.top() {
             let idx = abs_idx as usize - 1;

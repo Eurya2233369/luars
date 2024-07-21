@@ -44,10 +44,11 @@ pub fn for_loop(i: u32, vm: &mut dyn LuaVM) {
     vm.replace(a);
 
     let positive_step = vm.to_number(a + 2) >= 0.0;
-    if positive_step && vm.compare(a, a + 1, Comparison::LUA_OPLE) || !positive_step && vm.compare(a + 1, a, Comparison::LUA_OPLE) {
+    if positive_step && vm.compare(a, a + 1, Comparison::LUA_OPLE)
+        || !positive_step && vm.compare(a + 1, a, Comparison::LUA_OPLE)
+    {
         // pc+=sBx; R(A+3)=R(A)
         vm.add_pc(sbx);
         vm.copy(a, a + 3);
     }
 }
-

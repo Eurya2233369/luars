@@ -6,7 +6,8 @@ use std::{
 };
 
 use crate::{
-    api::basic::BasicType,
+    api::{basic::BasicType, lua_vm::RustFn},
+    binary::chunk::Prototype,
     math::{number, parser},
 };
 
@@ -118,6 +119,14 @@ impl LuaValue {
 
     pub fn is_nil(&self) -> bool {
         matches!(self, Self::Nil)
+    }
+
+    pub fn new_lua_fn(proto: Rc<Prototype>) -> Self {
+        Self::Function(Rc::new(Closure::new_lua_closure(proto)))
+    }
+
+    pub fn new_rust_fn(f: RustFn) -> Self {
+        Self::Function(Rc::new(Closure::new_rust_closure(f)))
     }
 
     fn str_to_integer(s: &str) -> Option<i64> {

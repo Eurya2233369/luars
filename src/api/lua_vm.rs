@@ -1,3 +1,5 @@
+pub type RustFn = fn(&dyn super::lua_api::LuaState) -> usize;
+
 pub use super::lua_api::LuaState as LuaAPI;
 
 pub trait LuaVM: LuaAPI {

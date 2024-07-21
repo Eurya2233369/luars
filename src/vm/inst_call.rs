@@ -109,6 +109,6 @@ pub fn call_self(i: u32, vm: &mut dyn LuaVM) {
 
     vm.copy(b, a + 1);
     vm.get_rk(c);
-    vm.get_table(b);
+    vm.table(b);
     vm.replace(a);
 }

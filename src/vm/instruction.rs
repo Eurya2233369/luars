@@ -5,8 +5,8 @@ use super::{
         binary_add, binary_band, binary_bnot, binary_bor, binary_bxor, binary_div, binary_idiv,
         binary_mod, binary_mul, binary_pow, binary_shl, binary_shr, binary_sub, binary_unm, concat,
         eq, le, len, lt, not, test, test_set,
-    }, inst_table::{get_table, new_table, set_list, set_table}, opcode::{
-        code_map, OP_ADD, OP_BAND, OP_BNOT, OP_BOR, OP_BXOR, OP_CALL, OP_CLOSURE, OP_CONCAT, OP_DIV, OP_EQ, OP_FORLOOP, OP_FORPREP, OP_GETTABLE, OP_IDIV, OP_JMP, OP_LE, OP_LEN, OP_LOADBOOL, OP_LOADK, OP_LOADKX, OP_LOADNIL, OP_LT, OP_MOD, OP_MOVE, OP_MUL, OP_NEWTABLE, OP_NOT, OP_POW, OP_RETURN, OP_SELF, OP_SETLIST, OP_SETTABLE, OP_SHL, OP_SHR, OP_SUB, OP_TAILCALL, OP_TEST, OP_TESTSET, OP_UNM, OP_VARARG
+    }, inst_table::{table, new_table, set_list, set_table}, inst_upvalue::tab_up, opcode::{
+        code_map, OP_ADD, OP_BAND, OP_BNOT, OP_BOR, OP_BXOR, OP_CALL, OP_CLOSURE, OP_CONCAT, OP_DIV, OP_EQ, OP_FORLOOP, OP_FORPREP, OP_GETTABLE, OP_GETTABUP, OP_IDIV, OP_JMP, OP_LE, OP_LEN, OP_LOADBOOL, OP_LOADK, OP_LOADKX, OP_LOADNIL, OP_LT, OP_MOD, OP_MOVE, OP_MUL, OP_NEWTABLE, OP_NOT, OP_POW, OP_RETURN, OP_SELF, OP_SETLIST, OP_SETTABLE, OP_SHL, OP_SHR, OP_SUB, OP_TAILCALL, OP_TEST, OP_TESTSET, OP_UNM, OP_VARARG
     }
 };
 
@@ -77,7 +77,8 @@ impl Instruction for u32 {
             OP_LOADBOOL => load_bool(self, vm),
             OP_LOADNIL => load_nil(self, vm),
             // TODO
-            OP_GETTABLE => get_table(self, vm),
+            OP_GETTABUP => tab_up(self, vm),
+            OP_GETTABLE => table(self, vm),
             OP_SETTABLE => set_table(self, vm),
             OP_NEWTABLE => new_table(self, vm),
             OP_SELF => call_return(self, vm),

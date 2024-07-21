@@ -5,8 +5,6 @@ use std::{
     rc::Rc,
 };
 
-use uuid::Uuid;
-
 use crate::math::number;
 
 use super::lua_value::LuaValue;
@@ -15,22 +13,24 @@ use super::lua_value::LuaValue;
 pub struct LuaTable {
     arr: Vec<LuaValue>,
     map: HashMap<LuaValue, LuaValue>,
-    uuid: Uuid,
+    address: usize,
 }
 
 impl Hash for LuaTable {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.uuid.hash(state);
+        self.address.hash(state);
     }
 }
 
 impl LuaTable {
     pub fn new(n_arr: usize, n_rec: usize) -> Self {
-        Self {
+        let mut this = Self {
             arr: Vec::with_capacity(n_arr),
             map: HashMap::with_capacity(n_rec),
-            uuid: Uuid::new_v4(),
-        }
+            address: 0,
+        };
+        this.address = std::ptr::addr_of!(this) as usize;
+        this
     }
 
     pub fn get(&self, key: &LuaValue) -> LuaValue {
@@ -91,10 +91,6 @@ impl LuaTable {
 
     pub fn len(&self) -> usize {
         self.arr.len()
-    }
-
-    pub fn hash_code(&self) -> Uuid {
-        self.uuid
     }
 
     fn shrink_array(&mut self) {

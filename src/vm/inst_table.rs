@@ -16,13 +16,13 @@ pub fn new_table(i: u32, vm: &mut dyn LuaVM) {
 }
 
 // R(A) := R(B)[RK(C)]
-pub fn get_table(i: u32, vm: &mut dyn LuaVM) {
+pub fn table(i: u32, vm: &mut dyn LuaVM) {
     let (mut a, mut b, c) = i.abc();
     a += 1;
     b += 1;
 
     vm.get_rk(c);
-    vm.get_table(b);
+    vm.table(b);
     vm.replace(a);
 }
 

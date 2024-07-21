@@ -8,7 +8,7 @@ use std::{
     env,
     fs::File,
     io::{BufReader, Read},
-    path::Path,
+    path::Path
 };
 
 use crate::api::lua_vm::LuaAPI;
@@ -19,6 +19,7 @@ fn main() {
         match read_file(filename) {
             Ok(data) => {
                 let mut ls = state::new_lua_state();
+                ls.register("print", print);
                 ls.load(data, "test.lua", "b");
                 ls.call(0, 0);
             }
@@ -36,3 +37,21 @@ fn read_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, std::io::Error> {
     reader.read_to_end(&mut contents)?;
     Ok(contents)
 }
+
+fn print(ls: &dyn LuaAPI) -> usize {
+    let n_args = ls.top();
+    for i in 1..(n_args + 1) {
+        if ls.is_string(i) {
+            print!("{}", ls.to_string(i));
+        } else {
+            print!("{}", ls.type_name_str(ls.type_enum_id(i)));
+        }
+        if i < n_args {
+            print!("\t")
+        }
+    }
+
+    println!();
+    0
+}
+
