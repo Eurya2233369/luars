@@ -1,8 +1,6 @@
 use core::fmt;
 use std::{
-    cell::RefCell,
-    hash::{Hash, Hasher},
-    rc::Rc,
+    cell::RefCell, hash::{Hash, Hasher}, ptr, rc::Rc
 };
 
 use crate::{
@@ -22,7 +20,7 @@ pub enum LuaValue {
     Number(f64),
     String(String),
     Table(Rc<RefCell<LuaTable>>),
-    Function(Rc<Closure>),
+    Function(Rc<RefCell<Closure>>),
 }
 
 impl fmt::Debug for LuaValue {
@@ -72,7 +70,7 @@ impl Hash for LuaValue {
             LuaValue::Number(n) => n.to_bits().hash(state),
             LuaValue::String(s) => s.hash(state),
             LuaValue::Table(t) => t.borrow().hash(state),
-            LuaValue::Function(c) => c.hash(state),
+            LuaValue::Function(c) => c.borrow().hash(state),
         }
     }
 }
@@ -122,11 +120,11 @@ impl LuaValue {
     }
 
     pub fn new_lua_fn(proto: Rc<Prototype>) -> Self {
-        Self::Function(Rc::new(Closure::new_lua_closure(proto)))
+        Self::Function(Rc::new(RefCell::new(Closure::new_lua_closure(proto))))
     }
 
-    pub fn new_rust_fn(f: RustFn) -> Self {
-        Self::Function(Rc::new(Closure::new_rust_closure(f)))
+    pub fn new_rust_fn(f: RustFn, n_upvals: usize) -> Self {
+        Self::Function(Rc::new(RefCell::new(Closure::new_rust_closure(f, n_upvals))))
     }
 
     fn str_to_integer(s: &str) -> Option<i64> {

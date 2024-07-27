@@ -1,6 +1,7 @@
-pub type RustFn = fn(&dyn super::lua_api::LuaState) -> usize;
-
+use super::basic::LUA_REGISTRYINDEX;
 pub use super::lua_api::LuaState as LuaAPI;
+
+pub type RustFn = fn(&dyn super::lua_api::LuaState) -> usize;
 
 pub trait LuaVM: LuaAPI {
     fn pc(&self) -> isize;
@@ -13,4 +14,9 @@ pub trait LuaVM: LuaAPI {
     fn load_proto(&mut self, idx: usize);
     fn stack_open(&self, s: &str);
     fn stack_closed(&self, s: &str);
+    fn close_upvalues(&mut self, a: isize);
+}
+
+pub const fn lua_upvalue_index(i: isize) -> isize {
+    LUA_REGISTRYINDEX - 1
 }

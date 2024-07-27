@@ -2,11 +2,9 @@ use crate::api::lua_vm::LuaVM;
 
 use super::{
     inst_call::{call, call_return, closure, tail_call, vararg}, inst_for::{for_loop, for_prep}, inst_load::{load_bool, load_k, load_kx, load_nil}, inst_misc::{misc_jump, misc_move}, inst_operators::{
-        binary_add, binary_band, binary_bnot, binary_bor, binary_bxor, binary_div, binary_idiv,
-        binary_mod, binary_mul, binary_pow, binary_shl, binary_shr, binary_sub, binary_unm, concat,
-        eq, le, len, lt, not, test, test_set,
-    }, inst_table::{table, new_table, set_list, set_table}, inst_upvalue::tab_up, opcode::{
-        code_map, OP_ADD, OP_BAND, OP_BNOT, OP_BOR, OP_BXOR, OP_CALL, OP_CLOSURE, OP_CONCAT, OP_DIV, OP_EQ, OP_FORLOOP, OP_FORPREP, OP_GETTABLE, OP_GETTABUP, OP_IDIV, OP_JMP, OP_LE, OP_LEN, OP_LOADBOOL, OP_LOADK, OP_LOADKX, OP_LOADNIL, OP_LT, OP_MOD, OP_MOVE, OP_MUL, OP_NEWTABLE, OP_NOT, OP_POW, OP_RETURN, OP_SELF, OP_SETLIST, OP_SETTABLE, OP_SHL, OP_SHR, OP_SUB, OP_TAILCALL, OP_TEST, OP_TESTSET, OP_UNM, OP_VARARG
+        binary_add, binary_band, binary_bor, binary_bxor, binary_div, binary_idiv, binary_mod, binary_mul, binary_pow, binary_shl, binary_shr, binary_sub, concat, eq, le, len, lt, not, test, test_set, unary_bnot, unary_unm
+    }, inst_table::{new_table, set_list, set_table, table}, inst_upvalue::{get_tabup, get_upval, set_tabup, set_upval, tab_up}, opcode::{
+        code_map, OP_ADD, OP_BAND, OP_BNOT, OP_BOR, OP_BXOR, OP_CALL, OP_CLOSURE, OP_CONCAT, OP_DIV, OP_EQ, OP_FORLOOP, OP_FORPREP, OP_GETTABLE, OP_GETTABUP, OP_GETUPVAL, OP_IDIV, OP_JMP, OP_LE, OP_LEN, OP_LOADBOOL, OP_LOADK, OP_LOADKX, OP_LOADNIL, OP_LT, OP_MOD, OP_MOVE, OP_MUL, OP_NEWTABLE, OP_NOT, OP_POW, OP_RETURN, OP_SELF, OP_SETLIST, OP_SETTABLE, OP_SETTABUP, OP_SETUPVAL, OP_SHL, OP_SHR, OP_SUB, OP_TAILCALL, OP_TEST, OP_TESTSET, OP_UNM, OP_VARARG
     }
 };
 
@@ -76,9 +74,11 @@ impl Instruction for u32 {
             OP_LOADKX => load_kx(self, vm),
             OP_LOADBOOL => load_bool(self, vm),
             OP_LOADNIL => load_nil(self, vm),
-            // TODO
-            OP_GETTABUP => tab_up(self, vm),
+            OP_GETUPVAL => get_upval(self, vm),
+            OP_GETTABUP => get_tabup(self, vm),
             OP_GETTABLE => table(self, vm),
+            OP_SETTABUP => set_tabup(self, vm),
+            OP_SETUPVAL => set_upval(self, vm),
             OP_SETTABLE => set_table(self, vm),
             OP_NEWTABLE => new_table(self, vm),
             OP_SELF => call_return(self, vm),
@@ -94,8 +94,8 @@ impl Instruction for u32 {
             OP_BXOR => binary_bxor(self, vm),
             OP_SHL => binary_shl(self, vm),
             OP_SHR => binary_shr(self, vm),
-            OP_UNM => binary_unm(self, vm),
-            OP_BNOT => binary_bnot(self, vm),
+            OP_UNM => unary_unm(self, vm),
+            OP_BNOT => unary_bnot(self, vm),
             OP_NOT => not(self, vm),
             OP_LEN => len(self, vm),
             OP_CONCAT => concat(self, vm),

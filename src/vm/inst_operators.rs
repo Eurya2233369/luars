@@ -85,13 +85,13 @@ pub fn binary_shr(i: u32, vm: &mut dyn LuaVM) {
 }
 
 // -
-pub fn binary_unm(i: u32, vm: &mut dyn LuaVM) {
-    binary_arith(i, vm, Arithmetic::LUA_OPUNM);
+pub fn unary_unm(i: u32, vm: &mut dyn LuaVM) {
+    unary_arith(i, vm, Arithmetic::LUA_OPUNM);
 }
 
 // ~
-pub fn binary_bnot(i: u32, vm: &mut dyn LuaVM) {
-    binary_arith(i, vm, Arithmetic::LUA_OPBNOT);
+pub fn unary_bnot(i: u32, vm: &mut dyn LuaVM) {
+    unary_arith(i, vm, Arithmetic::LUA_OPBNOT);
 }
 
 // R(A) := length of R(B)

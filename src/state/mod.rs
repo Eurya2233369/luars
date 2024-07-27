@@ -1,12 +1,11 @@
+mod api_arith;
+mod api_compare;
 mod closure;
 mod lua_stack;
 mod lua_state;
 mod lua_table;
 mod lua_value;
-// mod api_stack;
-mod api_arith;
-// mod api_call;
-mod api_compare;
+mod vec;
 
 pub use self::lua_state::LuaState;
 

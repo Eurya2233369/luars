@@ -56,7 +56,7 @@ pub const OP_ARG_U: u8 = 1;
 pub const OP_ARG_R: u8 = 2;
 pub const OP_ARG_K: u8 = 3;
 
-const OPCODES: &'static [OpCode] = &[
+const OPCODES: [OpCode; 47] = [
     opcode(OP_ARG_R, OP_ARG_N, OP_MODE_ABC, "MOVE     "), // R(A) := R(B)
     opcode(OP_ARG_K, OP_ARG_N, OP_MODE_ABX, "LOADK    "), // R(A) := Kst(Bx)
     opcode(OP_ARG_N, OP_ARG_N, OP_MODE_ABX, "LOADKX   "), // R(A) := Kst(extra arg)
@@ -115,10 +115,11 @@ const fn opcode(bmode: u8, cmode: u8, opmode: u8, name: &'static str) -> OpCode 
     }
 }
 
-pub fn code_map(code: u8) -> &'static OpCode {
-    &OPCODES[code as usize]
+pub fn code_map(code: u8) -> OpCode {
+    OPCODES[code as usize]
 }
 
+#[derive(Clone, Copy)]
 pub struct OpCode {
     pub bmode: u8,          // B arg mode
     pub cmode: u8,          // C arg mode

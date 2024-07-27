@@ -1,4 +1,7 @@
-use std::rc::Rc;
+use std::{
+    borrow::{Borrow, BorrowMut},
+    rc::Rc,
+};
 
 pub const LUA_SIGNATURE: &[u8; 4] = b"\x1bLua";
 pub const LUAC_VERSION: u8 = 0x53;
@@ -19,7 +22,7 @@ pub const TAG_INTEGER: u8 = 0x13;
 pub const TAG_SHORT_STR: u8 = 0x04;
 pub const TAG_LONG_STR: u8 = 0x14;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ConstantType {
     Nil,
     Boolean(bool),
@@ -207,4 +210,5 @@ impl Prototype {
     pub fn upvalue_names(&self) -> &Vec<String> {
         &self.upvalue_names
     }
+ 
 }

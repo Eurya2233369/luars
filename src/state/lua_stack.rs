@@ -1,24 +1,29 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use crate::api::basic::LUA_REGISTRYINDEX;
 
-use super::{closure::Closure, lua_value::LuaValue};
+use super::{
+    closure::{Closure, UpValue},
+    lua_value::LuaValue,
+};
 
 #[derive(Debug)]
 pub struct LuaStack {
-    slot: Vec<LuaValue>,
-    registry: LuaValue,
-    pub closure: Rc<Closure>,
+    pub slot: Vec<LuaValue>,
+    pub registry: LuaValue,
+    pub closure: Rc<RefCell<Closure>>,
+    pub openuvs: Vec<Rc<RefCell<UpValue>>>,
     pub varargs: Vec<LuaValue>,
     pub pc: isize,
 }
 
 impl LuaStack {
-    pub fn new(size: usize, registry: LuaValue, closure: Rc<Closure>) -> Self {
+    pub fn new(size: usize, registry: LuaValue, closure: Rc<RefCell<Closure>>) -> Self {
         Self {
             slot: Vec::with_capacity(size),
             registry,
             closure,
+            openuvs: Vec::with_capacity(10),
             varargs: Vec::new(),
             pc: 0,
         }
@@ -94,6 +99,13 @@ impl LuaStack {
     }
 
     pub fn is_valid(&self, idx: isize) -> bool {
+        if idx < LUA_REGISTRYINDEX {
+            /* upvalues */
+            let uv_idx = LUA_REGISTRYINDEX - idx - 1;
+            let c = self.closure.borrow();
+            return uv_idx < c.upvals.len() as isize;
+        }
+
         if idx == LUA_REGISTRYINDEX {
             true
         } else {
@@ -103,6 +115,19 @@ impl LuaStack {
     }
 
     pub fn get(&self, idx: isize) -> LuaValue {
+        if idx < LUA_REGISTRYINDEX {
+            /* upvalues */
+            let uv_idx = LUA_REGISTRYINDEX - idx - 1;
+            let c = self.closure.borrow_mut();
+
+            if uv_idx >= c.upvals.len() as isize {
+                return LuaValue::Nil;
+            } else {
+                println!("set get {:?}", c);
+                return c.upvals[uv_idx as usize].borrow().val.clone();
+            }
+        }
+
         if idx == LUA_REGISTRYINDEX {
             self.registry.clone()
         } else {
@@ -117,6 +142,19 @@ impl LuaStack {
     }
 
     pub fn set(&mut self, idx: isize, val: LuaValue) {
+        if idx < LUA_REGISTRYINDEX {
+            /* upvalues */
+            let uv_idx = LUA_REGISTRYINDEX - idx - 1;
+            let c = self.closure.borrow_mut();
+
+            if uv_idx < c.upvals.len() as isize {
+                println!("set val {:?} {:?}", c, val);
+                c.upvals[uv_idx as usize].borrow_mut().val = val;
+                println!("set val {:?}", c.upvals[uv_idx as usize].borrow_mut().val);
+            }
+            return;
+        }
+
         if idx == LUA_REGISTRYINDEX {
             self.registry = val;
             return;

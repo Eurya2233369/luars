@@ -16,6 +16,7 @@ pub fn misc_jump(i: u32, vm: &mut dyn LuaVM) {
     vm.add_pc(sbx);
 
     if a != 0 {
-        todo!();
+        vm.close_upvalues(a);
     }
+
 }

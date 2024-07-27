@@ -45,6 +45,7 @@ pub trait LuaState {
     fn push_string(&mut self, s: String);
     fn push_rust_fn(&mut self, f: RustFn);
     fn push_global_table(&mut self);
+    fn push_rust_closure(&mut self, f: RustFn, n: isize);
     /* comparison and arithmetic functions */
     fn arith(&mut self, op: Arithmetic);
     fn compare(&self, idx1: isize, idx2: isize, op: Comparison) -> bool;
