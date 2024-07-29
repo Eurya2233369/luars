@@ -8,7 +8,6 @@ pub fn closure(i: u32, vm: &mut dyn LuaVM) {
 
     vm.load_proto(bx as usize);
     vm.replace(a);
-    println!("closure {a}, {bx}");
 }
 
 pub fn call(i: u32, vm: &mut dyn LuaVM) {
@@ -18,7 +17,6 @@ pub fn call(i: u32, vm: &mut dyn LuaVM) {
     let nargs = push_func_and_args(a, b, vm);
     vm.call(nargs, c - 1);
     pop_results(a, c, vm);
-    println!("call {a} {b} {c}");
 }
 
 fn push_func_and_args(a: isize, b: isize, vm: &mut dyn LuaVM) -> usize {
@@ -77,8 +75,6 @@ pub fn call_return(i: u32, vm: &mut dyn LuaVM) {
             }
         }
     }
-
-    println!("call_return {a} {b} ()");
 }
 
 // R(A), R(A+1), ..., R(A+B-2) = vararg
@@ -90,8 +86,6 @@ pub fn vararg(i: u32, vm: &mut dyn LuaVM) {
         vm.load_vararg(b - 1);
         pop_results(a, b, vm)
     }
-
-    println!("vararg {a} {b} ()")
 }
 
 // return R(A)(R(A+1), ... ,R(A+B-1))
@@ -104,8 +98,6 @@ pub fn tail_call(i: u32, vm: &mut dyn LuaVM) {
     let nargs = push_func_and_args(a, b, vm);
     vm.call(nargs, c - 1);
     pop_results(a, c, vm);
-
-    println!("tail_call {a} {b} ()")
 }
 
 // R(A+1) := R(B); R(A) := R(B)[RK(C)]
@@ -118,6 +110,4 @@ pub fn call_self(i: u32, vm: &mut dyn LuaVM) {
     vm.get_rk(c);
     vm.table(b);
     vm.replace(a);
-
-    println!("call_self {a} {b} {c}");
 }

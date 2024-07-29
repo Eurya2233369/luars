@@ -5,7 +5,7 @@ mod lua_stack;
 mod lua_state;
 mod lua_table;
 mod lua_value;
-mod vec;
+mod util;
 
 pub use self::lua_state::LuaState;
 

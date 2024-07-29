@@ -25,7 +25,9 @@ impl MyVec<Rc<RefCell<UpValue>>> for Vec<Rc<RefCell<UpValue>>> {
                 _ => {
                     if n > 0 {
                         for _ in 0..n - 1 {
-                            self.push(Rc::new(RefCell::new(UpValue { val: LuaValue::Nil })));
+                            self.push(Rc::new(RefCell::new(UpValue {
+                                val: (LuaValue::Nil).to_ptr(),
+                            })));
                         }
                     }
 

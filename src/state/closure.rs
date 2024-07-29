@@ -63,5 +63,5 @@ impl Closure {
 
 #[derive(Debug, Clone)]
 pub struct UpValue {
-    pub val: LuaValue,
+    pub val: Rc<RefCell<LuaValue>>,
 }

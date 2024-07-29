@@ -18,7 +18,7 @@ use super::{
     lua_stack::LuaStack,
     lua_table::{self, new_table},
     lua_value::LuaValue,
-    vec::MyVec,
+    util::MyVec,
 };
 
 const LUA_RIDX_GLOBALS: LuaValue = LuaValue::Integer(crate::api::basic::LUA_RIDX_GLOBALS as i64);
@@ -85,8 +85,10 @@ impl LuaAPI for LuaState {
     }
 
     fn copy(&mut self, from_idx: isize, to_idx: isize) {
-        let val = self.stack().get(from_idx);
-        self.stack_mut().set(to_idx, val);
+        let rc_val = self.stack().get(from_idx);
+        let val = rc_val.borrow();
+
+        self.stack_mut().set(to_idx, (*val).clone());
     }
 
     fn push_value(&mut self, idx: isize) {
@@ -95,8 +97,10 @@ impl LuaAPI for LuaState {
     }
 
     fn replace(&mut self, idx: isize) {
-        let val = self.stack_mut().pop();
-        self.stack_mut().set(idx, val);
+        let rc_val = self.stack_mut().pop();
+        let val = rc_val.borrow();
+
+        self.stack_mut().set(idx, val.to_owned());
     }
 
     fn insert(&mut self, idx: isize) {
@@ -130,7 +134,7 @@ impl LuaAPI for LuaState {
             }
             _ => {
                 for _ in n..0 {
-                    self.stack_mut().push(LuaValue::Nil);
+                    self.stack_mut().push(LuaValue::Nil.to_ptr());
                 }
             }
         }
@@ -153,7 +157,9 @@ impl LuaAPI for LuaState {
 
     fn type_enum_id(&self, idx: isize) -> BasicType {
         if self.stack().is_valid(idx) {
-            self.stack().get(idx).type_id()
+            let rc_val = self.stack().get(idx);
+            let val = rc_val.borrow();
+            val.type_id()
         } else {
             BasicType::LUA_TNONE
         }
@@ -197,18 +203,27 @@ impl LuaAPI for LuaState {
     }
 
     fn is_integer(&self, idx: isize) -> bool {
-        matches!(self.stack().get(idx), LuaValue::Integer(_))
+        let rc_val = self.stack().get(idx);
+        let val = rc_val.borrow();
+
+        matches!(&*val, LuaValue::Integer(_))
     }
 
     fn is_rust_function(&self, idx: isize) -> bool {
-        match self.stack().get(idx) {
+        let rc_val = self.stack().get(idx);
+        let val = rc_val.borrow();
+
+        match &*val {
             LuaValue::Function(c) => c.borrow().rust_fn().is_some(),
             _ => false,
         }
     }
 
     fn to_boolean(&self, idx: isize) -> bool {
-        self.stack().get(idx).to_boolean()
+        let rc_val = self.stack().get(idx);
+        let val = &*rc_val.borrow();
+
+        val.to_boolean()
     }
 
     fn to_integer(&self, idx: isize) -> i64 {
@@ -216,7 +231,9 @@ impl LuaAPI for LuaState {
     }
 
     fn to_integerx(&self, idx: isize) -> Option<i64> {
-        let val = self.stack().get(idx);
+        let rc_val = self.stack().get(idx);
+        let val = &*rc_val.borrow();
+
         val.to_integer()
     }
 
@@ -225,7 +242,9 @@ impl LuaAPI for LuaState {
     }
 
     fn to_numberx(&self, idx: isize) -> Option<f64> {
-        let val = self.stack().get(idx);
+        let rc_val = self.stack().get(idx);
+        let val = &*rc_val.borrow();
+
         val.to_float()
     }
 
@@ -234,8 +253,11 @@ impl LuaAPI for LuaState {
     }
 
     fn to_stringx(&self, idx: isize) -> Option<String> {
-        match self.stack().get(idx) {
-            LuaValue::String(s) => Some(s),
+        let rc_val = self.stack().get(idx);
+        let val = &*rc_val.borrow();
+
+        match val {
+            LuaValue::String(s) => Some(s.clone()),
             LuaValue::Number(n) => Some(n.to_string()),
             LuaValue::Integer(i) => Some(i.to_string()),
             _ => None,
@@ -243,7 +265,10 @@ impl LuaAPI for LuaState {
     }
 
     fn to_rust_function(&self, idx: isize) -> Option<RustFn> {
-        match self.stack().get(idx) {
+        let rc_val = self.stack().get(idx);
+        let val = &*rc_val.borrow();
+
+        match val {
             LuaValue::Function(c) => c.borrow().rust_fn(),
             _ => None,
         }
@@ -251,33 +276,33 @@ impl LuaAPI for LuaState {
 
     /* push functions (rust -> stack()) */
     fn push_nil(&mut self) {
-        self.stack_mut().push(LuaValue::Nil);
+        self.stack_mut().push(LuaValue::Nil.to_ptr());
     }
 
     fn push_boolean(&mut self, b: bool) {
-        self.stack_mut().push(LuaValue::Boolean(b));
+        self.stack_mut().push(LuaValue::Boolean(b).to_ptr());
     }
 
     fn push_integer(&mut self, n: i64) {
-        self.stack_mut().push(LuaValue::Integer(n));
+        self.stack_mut().push(LuaValue::Integer(n).to_ptr());
     }
 
     fn push_number(&mut self, n: f64) {
-        self.stack_mut().push(LuaValue::Number(n));
+        self.stack_mut().push(LuaValue::Number(n).to_ptr());
     }
 
     fn push_string(&mut self, s: String) {
-        self.stack_mut().push(LuaValue::String(s));
+        self.stack_mut().push(LuaValue::String(s).to_ptr());
     }
 
     fn push_rust_fn(&mut self, f: RustFn) {
-        self.stack_mut().push(LuaValue::new_rust_fn(f, 0));
+        self.stack_mut().push(LuaValue::new_rust_fn(f, 0).to_ptr());
     }
 
     fn push_global_table(&mut self) {
         if let LuaValue::Table(t) = &self.registry {
             let global = t.borrow().get(&LUA_RIDX_GLOBALS);
-            self.stack_mut().push(global);
+            self.stack_mut().push(global.to_ptr());
         }
     }
 
@@ -290,22 +315,36 @@ impl LuaAPI for LuaState {
             }
         }
 
-        self.stack_mut().push(f);
+        self.stack_mut().push(f.to_ptr());
     }
 
     fn arith(&mut self, op: Arithmetic) {
         if op != Arithmetic::LUA_OPUNM && op != Arithmetic::LUA_OPBNOT {
-            let b = self.stack_mut().pop();
-            let a = self.stack_mut().pop();
+            let b = {
+                let rc_b = self.stack_mut().pop();
+                let b = rc_b.borrow();
+                b.to_owned()
+            };
+
+            let a = {
+                let rc_a = self.stack_mut().pop();
+                let a = rc_a.borrow();
+                a.to_owned()
+            };
 
             if let Some(result) = super::api_arith::arith(&a, &b, &op) {
-                self.stack_mut().push(result);
+                self.stack_mut().push(result.to_ptr());
                 return;
             }
         } else {
-            let a = self.stack_mut().pop();
+            let a = {
+                let rc_a = self.stack_mut().pop();
+                let a = rc_a.borrow();
+                a.to_owned()
+            };
+
             if let Some(result) = super::api_arith::arith(&a, &a, &op) {
-                self.stack_mut().push(result);
+                self.stack_mut().push(result.to_ptr());
                 return;
             }
         }
@@ -316,9 +355,13 @@ impl LuaAPI for LuaState {
         if !self.stack().is_valid(idx1) || !self.stack().is_valid(idx2) {
             false
         } else {
-            let a = self.stack().get(idx1);
-            let b = self.stack().get(idx2);
-            if let Some(result) = api_compare::compare(&a, &b, op) {
+            let rc_a = self.stack().get(idx1);
+            let a = rc_a.borrow();
+
+            let rc_b = self.stack().get(idx2);
+            let b = rc_b.borrow();
+
+            if let Some(result) = api_compare::compare(&*a, &*b, op) {
                 return result;
             }
             panic!("comparison error!")
@@ -326,7 +369,8 @@ impl LuaAPI for LuaState {
     }
 
     fn len(&mut self, idx: isize) {
-        let val = self.stack().get(idx);
+        let rc_val = self.stack().get(idx);
+        let val = &*rc_val.borrow();
 
         let len = match val {
             LuaValue::String(s) => s.len(),
@@ -334,12 +378,12 @@ impl LuaAPI for LuaState {
             _ => panic!("length error!"),
         };
 
-        self.stack_mut().push(LuaValue::Integer(len as i64));
+        self.stack_mut().push(LuaValue::Integer(len as i64).to_ptr());
     }
 
     fn concat(&mut self, n: isize) {
         if n == 0 {
-            self.stack_mut().push(LuaValue::String(String::new()));
+            self.stack_mut().push(LuaValue::String(String::new()).to_ptr());
         } else if n >= 2 {
             for _ in 1..n {
                 if self.is_string(-1) && self.is_string(-2) {
@@ -348,7 +392,7 @@ impl LuaAPI for LuaState {
                     s1.push_str(&s2);
                     self.stack_mut().pop();
                     self.stack_mut().pop();
-                    self.stack_mut().push(LuaValue::String(s1));
+                    self.stack_mut().push(LuaValue::String(s1).to_ptr());
                 } else {
                     panic!("concatenation error!");
                 }
@@ -362,26 +406,34 @@ impl LuaAPI for LuaState {
     }
 
     fn create_table(&mut self, n_arr: usize, n_rec: usize) {
-        self.stack_mut().push(new_table(n_arr, n_rec));
+        self.stack_mut().push(new_table(n_arr, n_rec).to_ptr());
     }
 
     fn table(&mut self, idx: isize) -> BasicType {
-        let t = self.stack().get(idx);
-        let k = self.stack_mut().pop();
-        self.get_table_impl(&t, &k)
+        let rc_t = self.stack().get(idx);
+        let t = &*rc_t.borrow();
+
+        let rc_k = self.stack_mut().pop();
+        let k = rc_k.borrow().to_owned();
+
+        self.get_table_impl(t, &k)
     }
 
     fn field(&mut self, idx: isize, k: &str) -> BasicType {
-        let t = self.stack().get(idx);
+        let rc_t = self.stack().get(idx);
+        let t = &*rc_t.borrow();
+
         let k = LuaValue::String(k.to_string());
         // TODO
-        self.get_table_impl(&t, &k)
+        self.get_table_impl(t, &k)
     }
 
     fn i(&mut self, idx: isize, i: i64) -> BasicType {
-        let t = self.stack().get(idx);
+        let rc_t = self.stack().get(idx);
+        let t = &*rc_t.borrow();
+
         let k = LuaValue::Integer(i);
-        self.get_table_impl(&t, &k)
+        self.get_table_impl(t, &k)
     }
 
     fn global(&mut self, name: &str) -> BasicType {
@@ -396,31 +448,48 @@ impl LuaAPI for LuaState {
 
     /* set functions (stack() -> Lua) */
     fn set_table(&mut self, idx: isize) {
-        let t = self.stack().get(idx);
-        let v = self.stack_mut().pop();
-        let k = self.stack_mut().pop();
-        LuaState::set_table_impl(&t, k, v);
+        let rc_t = self.stack().get(idx);
+        let t = &*rc_t.borrow();
+
+        let rc_v = self.stack_mut().pop();
+        let v = rc_v.borrow().to_owned();
+
+        let rc_k = self.stack_mut().pop();
+        let k = rc_k.borrow().to_owned();
+
+        LuaState::set_table_impl(t, k, v);
     }
 
     fn set_field(&mut self, idx: isize, k: &str) {
-        let t = self.stack().get(idx);
-        let v = self.stack_mut().pop();
+        let rc_t = self.stack().get(idx);
+        let t = &*rc_t.borrow();
+
+        let rc_v = self.stack_mut().pop();
+        let v = rc_v.borrow().to_owned();
+
         let k = LuaValue::String(k.to_string());
         // TODO
-        LuaState::set_table_impl(&t, k, v);
+        LuaState::set_table_impl(t, k, v);
     }
 
     fn set_i(&mut self, idx: isize, i: i64) {
-        let t = self.stack().get(idx);
-        let v = self.stack_mut().pop();
+        let rc_t = self.stack().get(idx);
+        let t = &*rc_t.borrow();
+
+        let rc_v = self.stack_mut().pop();
+        let v = rc_v.borrow().to_owned();
+
         let k = LuaValue::Integer(i);
-        LuaState::set_table_impl(&t, k, v);
+        LuaState::set_table_impl(t, k, v);
     }
 
     fn set_global(&mut self, name: &str) {
         if let LuaValue::Table(r) = &self.registry {
             let t = r.borrow().get(&LUA_RIDX_GLOBALS);
-            let v = self.stack_mut().pop();
+
+            let rc_v = self.stack_mut().pop();
+            let v = rc_v.borrow().to_owned();   
+
             let k = LuaValue::String(name.to_string()); // TODO
             LuaState::set_table_impl(&t, k, v);
         }
@@ -444,23 +513,25 @@ impl LuaAPI for LuaState {
                 if let LuaValue::Table(t) = &self.registry {
                     let env = t.borrow().get(&LUA_RIDX_GLOBALS);
                     let upvals = &mut closure.upvals;
-                    upvals.set(0, Rc::new(RefCell::new(UpValue { val: env })));
+                    upvals.set(0, Rc::new(RefCell::new(UpValue { val: env.to_ptr() })));
                 }
             }
         }
 
-        self.stack_mut().push(f);
+        self.stack_mut().push(f.to_ptr());
 
         0 // TODO
     }
 
     fn call(&mut self, n_args: usize, n_results: isize) {
-        let val = self.stack().get(-(n_args as isize + 1));
-        if let LuaValue::Function(c) = val {
+        let rc_val = self.stack().get(-(n_args as isize + 1));
+        let val = rc_val.borrow();
+
+        if let LuaValue::Function(c) = &*val {
             if c.borrow().rust_fn().is_some() {
-                self.call_rust_closure(n_args, n_results, c)
+                self.call_rust_closure(n_args, n_results, c.clone())
             } else {
-                self.call_lua_closure(n_args, n_results, c);
+                self.call_lua_closure(n_args, n_results, c.clone());
             }
         } else {
             panic!("not function!");
@@ -497,7 +568,7 @@ impl LuaVM for LuaState {
             ConstantType::String(s) => LuaValue::String(s.clone()),
         };
 
-        self.stack_mut().push(val);
+        self.stack_mut().push(val.to_ptr());
     }
 
     fn get_rk(&mut self, rk: isize) {
@@ -546,6 +617,7 @@ impl LuaVM for LuaState {
                             let val = Rc::new(RefCell::new(UpValue {
                                 val: stack.slot[uv_idx].clone(),
                             }));
+
                             closure.upvals.set(i, val.clone());
                             stack.openuvs.set(i, val);
                         }
@@ -557,7 +629,7 @@ impl LuaVM for LuaState {
             }
         }
 
-        self.stack_mut().push(f);
+        self.stack_mut().push(f.to_ptr());
     }
 
     fn stack_open(&self, s: &str) {
@@ -589,7 +661,7 @@ impl LuaState {
         if let LuaValue::Table(tbl) = t {
             let v = tbl.borrow().get(k);
             let type_id = v.type_id();
-            self.stack_mut().push(v);
+            self.stack_mut().push(v.to_ptr());
             type_id
         } else {
             panic!("not a table!"); // TODO

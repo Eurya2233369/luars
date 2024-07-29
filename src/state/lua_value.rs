@@ -127,6 +127,10 @@ impl LuaValue {
         Self::Function(Rc::new(RefCell::new(Closure::new_rust_closure(f, n_upvals))))
     }
 
+    pub fn to_ptr(self) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(self))
+    }
+
     fn str_to_integer(s: &str) -> Option<i64> {
         let num = parser::parse_integer(s);
         if num.is_none() {

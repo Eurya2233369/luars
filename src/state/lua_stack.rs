@@ -9,11 +9,11 @@ use super::{
 
 #[derive(Debug)]
 pub struct LuaStack {
-    pub slot: Vec<LuaValue>,
+    pub slot: Vec<Rc<RefCell<LuaValue>>>,
     pub registry: LuaValue,
     pub closure: Rc<RefCell<Closure>>,
     pub openuvs: Vec<Rc<RefCell<UpValue>>>,
-    pub varargs: Vec<LuaValue>,
+    pub varargs: Vec<Rc<RefCell<LuaValue>>>,
     pub pc: isize,
 }
 
@@ -24,7 +24,7 @@ impl LuaStack {
             registry,
             closure,
             openuvs: Vec::with_capacity(10),
-            varargs: Vec::new(),
+            varargs: Vec::with_capacity(10),
             pc: 0,
         }
     }
@@ -37,11 +37,11 @@ impl LuaStack {
         self.slot.reserve(n);
     }
 
-    pub fn push(&mut self, val: LuaValue) {
+    pub fn push(&mut self, val: Rc<RefCell<LuaValue>>) {
         self.slot.push(val);
     }
 
-    pub fn push_n(&mut self, mut vals: Vec<LuaValue>, n: isize) {
+    pub fn push_n(&mut self, mut vals: Vec<Rc<RefCell<LuaValue>>>, n: isize) {
         vals.reverse();
         let nvals = vals.len();
         let un = if n < 0 { nvals } else { n as usize };
@@ -50,16 +50,16 @@ impl LuaStack {
             if i < nvals {
                 self.push(vals.pop().unwrap());
             } else {
-                self.push(LuaValue::Nil);
+                self.push(LuaValue::Nil.to_ptr());
             }
         }
     }
 
-    pub fn pop(&mut self) -> LuaValue {
+    pub fn pop(&mut self) -> Rc<RefCell<LuaValue>> {
         self.slot.pop().unwrap()
     }
 
-    pub fn pop_n(&mut self, n: usize) -> Vec<LuaValue> {
+    pub fn pop_n(&mut self, n: usize) -> Vec<Rc<RefCell<LuaValue>>> {
         let mut vec = Vec::with_capacity(n);
         for _ in 0..n {
             vec.push(self.pop());
@@ -78,7 +78,7 @@ impl LuaStack {
         match n.cmp(&0) {
             std::cmp::Ordering::Less => {
                 for _ in n..0 {
-                    self.push(LuaValue::Nil);
+                    self.push(LuaValue::Nil.to_ptr());
                 }
             }
             std::cmp::Ordering::Equal => { /* ignored */ }
@@ -114,29 +114,28 @@ impl LuaStack {
         }
     }
 
-    pub fn get(&self, idx: isize) -> LuaValue {
+    pub fn get(&self, idx: isize) -> Rc<RefCell<LuaValue>> {
         if idx < LUA_REGISTRYINDEX {
             /* upvalues */
             let uv_idx = LUA_REGISTRYINDEX - idx - 1;
             let c = self.closure.borrow_mut();
 
             if uv_idx >= c.upvals.len() as isize {
-                return LuaValue::Nil;
+                return LuaValue::Nil.to_ptr();
             } else {
-                println!("set get {:?}", c);
                 return c.upvals[uv_idx as usize].borrow().val.clone();
             }
         }
 
         if idx == LUA_REGISTRYINDEX {
-            self.registry.clone()
+            self.registry.clone().to_ptr()
         } else {
             let abs_idx = self.abs_index(idx);
             if abs_idx > 0 && abs_idx <= self.top() {
                 let idx = abs_idx as usize - 1;
                 self.slot[idx].clone()
             } else {
-                LuaValue::Nil
+                LuaValue::Nil.to_ptr()
             }
         }
     }
@@ -148,9 +147,9 @@ impl LuaStack {
             let c = self.closure.borrow_mut();
 
             if uv_idx < c.upvals.len() as isize {
-                println!("set val {:?} {:?}", c, val);
-                c.upvals[uv_idx as usize].borrow_mut().val = val;
-                println!("set val {:?}", c.upvals[uv_idx as usize].borrow_mut().val);
+                let rc_upval = c.upvals[uv_idx as usize].borrow();
+                let mut value = rc_upval.val.borrow_mut();
+                *value = val;
             }
             return;
         }
@@ -163,7 +162,9 @@ impl LuaStack {
         let abs_idx = self.abs_index(idx);
         if abs_idx > 0 && abs_idx <= self.top() {
             let idx = abs_idx as usize - 1;
-            self.slot[idx] = val;
+
+            let mut v = self.slot[idx].borrow_mut();
+            *v = val;
         } else {
             panic!("invalid index!");
         }
