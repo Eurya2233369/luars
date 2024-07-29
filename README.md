@@ -9,7 +9,7 @@
   - [x] LuaTable
   - [x] Lua函数调用
   - [x] rust函数调用
-  - [ ] 闭包和Upvalue
+  - [x] 闭包和Upvalue
   - [ ] 元编程
   - [ ] 迭代器
   - [ ] 异常和错误处理
